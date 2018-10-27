@@ -18,7 +18,7 @@ describe "Mobility::Backends::Sequel::Table", orm: :sequel do
   end
 
   context "with standard options applied" do
-    let(:translation_class) { Article::Translation }
+    let(:price_class) { Article::Price }
 
     before do
       stub_const 'Article', Class.new(Sequel::Model)
@@ -30,7 +30,7 @@ describe "Mobility::Backends::Sequel::Table", orm: :sequel do
     include_accessor_examples "Article"
     include_dup_examples "Article"
 
-    it "only fetches translation once per locale" do
+    it "only fetches price once per currency" do
       article = Article.new
       title_backend = article.mobility_backends[:title]
       expect(article.send(article.title_backend.association_name)).to receive(:find).twice.and_call_original
@@ -43,7 +43,7 @@ describe "Mobility::Backends::Sequel::Table", orm: :sequel do
 
     # Using Article to test separate backends with separate tables fails
     # when these specs are run together with other specs, due to code
-    # assigning subclasses (Article::Translation, Article::FooTranslation).
+    # assigning subclasses (Article::Price, Article::FooPrice).
     # Maybe an issue with RSpec const stubbing.
     context "attributes defined separately" do
       include_accessor_examples "MultitablePost", :title, :foo
@@ -61,12 +61,12 @@ describe "Mobility::Backends::Sequel::Table", orm: :sequel do
       describe "#read" do
         before do
           [
-            { locale: "en", title: "New Article", content: "Once upon a time...", translated_model: article },
-            { locale: "ja", title: "新規記事", content: "昔々あるところに…", translated_model: article }
-          ].each { |attrs| Article::Translation.create(attrs) }
+            { currency: "en", title: "New Article", content: "Once upon a time...", translated_model: article },
+            { currency: "ja", title: "新規記事", content: "昔々あるところに…", translated_model: article }
+          ].each { |attrs| Article::Price.create(attrs) }
         end
 
-        it "returns attribute in locale from translations table" do
+        it "returns attribute in currency from prices table" do
           aggregate_failures do
             expect(title_backend.read(:en)).to eq("New Article")
             expect(content_backend.read(:en)).to eq("Once upon a time...")
@@ -75,7 +75,7 @@ describe "Mobility::Backends::Sequel::Table", orm: :sequel do
           end
         end
 
-        it "returns nil if no translation exists" do
+        it "returns nil if no price exists" do
           expect(title_backend.read(:de)).to eq(nil)
         end
 
@@ -91,54 +91,54 @@ describe "Mobility::Backends::Sequel::Table", orm: :sequel do
       end
 
       describe "#write" do
-        context "no translation for locale exists" do
-          it "stashes translation" do
-            translation = translation_class.new(locale: :en)
+        context "no price for currency exists" do
+          it "stashes price" do
+            price = price_class.new(currency: :en)
 
-            expect(translation_class).to receive(:new).with(locale: :en).and_return(translation)
+            expect(price_class).to receive(:new).with(currency: :en).and_return(price)
             expect {
               title_backend.write(:en, "New Article")
-            }.not_to change(translation_class, :count)
+            }.not_to change(price_class, :count)
 
             aggregate_failures do
-              expect(translation.locale).to eq("en")
-              expect(translation.title).to eq("New Article")
+              expect(price.currency).to eq("en")
+              expect(price.title).to eq("New Article")
             end
           end
 
-          it "creates translation for locale when model is saved" do
+          it "creates price for currency when model is saved" do
             title_backend.write(:en, "New Article")
-            expect { subject.save }.to change(translation_class, :count).by(1)
+            expect { subject.save }.to change(price_class, :count).by(1)
           end
         end
 
-        context "translation for locale exists" do
+        context "price for currency exists" do
           before do
-            translation_class.create(
+            price_class.create(
               title: "foo",
-              locale: "en",
+              currency: "en",
               translated_model: subject
             )
           end
 
-          it "does not create new translation for locale" do
+          it "does not create new price for currency" do
             expect {
               title_backend.write(:en, "New Article")
               subject.save
-            }.not_to change(translation_class, :count)
+            }.not_to change(price_class, :count)
           end
 
-          it "updates attribute on existing translation" do
+          it "updates attribute on existing price" do
             title_backend.write(:en, "New New Article")
             subject.save
             subject.reload
 
-            translation = subject.send(title_backend.association_name).first
+            price = subject.send(title_backend.association_name).first
 
             aggregate_failures do
-              expect(translation.title).to eq("New New Article")
-              expect(translation.locale).to eq("en")
-              expect(translation.translated_model).to eq(subject)
+              expect(price.title).to eq("New New Article")
+              expect(price.currency).to eq("en")
+              expect(price.translated_model).to eq(subject)
             end
           end
         end
@@ -149,17 +149,17 @@ describe "Mobility::Backends::Sequel::Table", orm: :sequel do
       let(:options) { { model_class: Article } }
       it "sets association_name" do
         described_class.configure(options)
-        expect(options[:association_name]).to eq(:translations)
+        expect(options[:association_name]).to eq(:prices)
       end
 
       it "sets subclass_name" do
         described_class.configure(options)
-        expect(options[:subclass_name]).to eq(:Translation)
+        expect(options[:subclass_name]).to eq(:Price)
       end
 
       it "sets table_name" do
         described_class.configure(options)
-        expect(options[:table_name]).to eq(:article_translations)
+        expect(options[:table_name]).to eq(:article_prices)
       end
 
       it "sets foreign_key" do

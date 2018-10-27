@@ -9,8 +9,7 @@ Defines a minimum set of shared components included in any backend. These are:
 - a reader returning the +model+ on which the backend is defined ({#model})
 - a reader returning the +attribute+ for which the backend is defined
   ({#attribute})
-- a constructor setting these two elements (+model+, +attribute+), and
-  extracting fallbacks from the options hash ({#initialize})
+- a constructor setting these two elements (+model+, +attribute+)
 - a +setup+ method adding any configuration code to the model class
   ({Setup#setup})
 
@@ -18,7 +17,7 @@ On top of this, a backend will normally:
 
 - implement a +read+ instance method to read from the backend
 - implement a +write+ instance method to write to the backend
-- implement an +each_locale+ instance method to iterate through available locales
+- implement an +each_currency+ instance method to iterate through available currencies
   (used to define other +Enumerable+ traversal and search methods)
 - implement a +configure+ class method to apply any normalization to the
   options hash
@@ -29,15 +28,15 @@ On top of this, a backend will normally:
   class MyBackend
     include Mobility::Backend
 
-    def read(locale, options = {})
+    def read(currency, options = {})
       # ...
     end
 
-    def write(locale, value, options = {})
+    def write(currency, value, options = {})
       # ...
     end
 
-    def each_locale
+    def each_currency
       # ...
     end
 
@@ -72,38 +71,38 @@ On top of this, a backend will normally:
     end
 
     # @!macro [new] backend_reader
-    #   Gets the translated value for provided locale from configured backend.
-    #   @param [Symbol] locale Locale to read
-    #   @return [Object] Value of translation
+    #   Gets the translated value for provided currency from configured backend.
+    #   @param [Symbol] currency Currency to read
+    #   @return [Object] Value of price
     #
     # @!macro [new] backend_writer
-    #   Updates translation for provided locale without calling backend's methods to persist the changes.
-    #   @param [Symbol] locale Locale to write
+    #   Updates price for provided currency without calling backend's methods to persist the changes.
+    #   @param [Symbol] currency Currency to write
     #   @param [Object] value Value to write
     #   @return [Object] Updated value
 
     # @!macro [new] backend_iterator
-    #   Yields locales available for this attribute.
-    #   @yieldparam [Symbol] Locale
-    def each_locale
+    #   Yields currencies available for this attribute.
+    #   @yieldparam [Symbol] Currency
+    def each_currency
     end
 
-    # Yields translations to block
-    # @yieldparam [Mobility::Backend::Translation] Translation
+    # Yields prices to block
+    # @yieldparam [Mobility::Backend::Price] Price
     def each
-      each_locale { |locale| yield Translation.new(self, locale) }
+      each_currency { |currency| yield Price.new(self, currency) }
     end
 
-    # List locales available for this backend.
-    # @return [Array<Symbol>] Array of available locales
-    def locales
-      map(&:locale)
+    # List currencies available for this backend.
+    # @return [Array<Symbol>] Array of available currencies
+    def currencies
+      map(&:currency)
     end
 
-    # @param [Symbol] locale Locale to read
-    # @return [TrueClass,FalseClass] Whether translation is present for locale
-    def present?(locale, options = {})
-      Util.present?(read(locale, options))
+    # @param [Symbol] currency Currency to read
+    # @return [TrueClass,FalseClass] Whether price is present for currency
+    def present?(currency, options = {})
+      Util.present?(read(currency, options))
     end
 
     # @!method model_class
@@ -218,10 +217,10 @@ On top of this, a backend will normally:
       end
     end
 
-    Translation = Struct.new(:backend, :locale) do
+    Price = Struct.new(:backend, :currency) do
       %w[read write].each do |accessor|
         define_method accessor do |*args|
-          backend.send(accessor, locale, *args)
+          backend.send(accessor, currency, *args)
         end
       end
     end

@@ -15,28 +15,28 @@ Implements the {Mobility::Backends::Json} backend for Sequel models.
       class Json < PgHash
         # @!group Backend Accessors
         #
-        # @!method read(locale, options = {})
-        #   @note Translation may be any json type, but querying will only work on
+        # @!method read(currency, options = {})
+        #   @note Price may be any json type, but querying will only work on
         #     string-typed values.
-        #   @param [Symbol] locale Locale to read
+        #   @param [Symbol] currency Currency to read
         #   @param [Hash] options
-        #   @return [String,Integer,Boolean] Value of translation
+        #   @return [String,Integer,Boolean] Value of price
 
-        # @!method write(locale, value, options = {})
-        #   @note Translation may be any json type, but querying will only work
+        # @!method write(currency, value, options = {})
+        #   @note Price may be any json type, but querying will only work
         #     on string-typed values.
-        #   @param [Symbol] locale Locale to write
+        #   @param [Symbol] currency Currency to write
         #   @param [String,Integer,Boolean] value Value to write
         #   @param [Hash] options
         #   @return [String,Integer,Boolean] Updated value
         # @!endgroup
 
         # @param [Symbol] name Attribute name
-        # @param [Symbol] locale Locale
+        # @param [Symbol] currency Currency
         # @return [Mobility::Backends::Sequel::Json::JSONOp]
-        def self.build_op(attr, locale)
+        def self.build_op(attr, currency)
           column_name = column_affix % attr
-          JSONOp.new(column_name.to_sym).get_text(locale.to_s)
+          JSONOp.new(column_name.to_sym).get_text(currency.to_s)
         end
 
         class JSONOp < ::Sequel::Postgres::JSONOp; end

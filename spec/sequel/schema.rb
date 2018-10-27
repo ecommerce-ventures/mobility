@@ -29,10 +29,10 @@ module Mobility
             DateTime    :updated_at, allow_null: false
           end
 
-          DB.create_table? :article_translations do
+          DB.create_table? :article_prices do
             primary_key :id
             Integer     :article_id, allow_null: false
-            String      :locale,     allow_null: false
+            String      :currency,     allow_null: false
             String      :title
             String      :subtitle
             String      :content, size: 65535
@@ -47,50 +47,36 @@ module Mobility
             DateTime    :updated_at, allow_null: false
           end
 
-          DB.create_table? :multitable_post_translations do
+          DB.create_table? :multitable_post_prices do
             primary_key :id
             Integer     :multitable_post_id, allow_null: false
-            String      :locale,             allow_null: false
+            String      :currency,             allow_null: false
             String      :title
             DateTime    :created_at,         allow_null: false
             DateTime    :updated_at,         allow_null: false
           end
 
 
-          DB.create_table? :multitable_post_foo_translations do
+          DB.create_table? :multitable_post_foo_prices do
             primary_key :id
             Integer     :multitable_post_id, allow_null: false
-            String      :locale,             allow_null: false
+            String      :currency,             allow_null: false
             String      :foo
             DateTime    :created_at,         allow_null: false
             DateTime    :updated_at,         allow_null: false
           end
 
-          DB.create_table? :mobility_text_translations do
+          DB.create_table? :mobility_integer_prices do
             primary_key :id
-            String      :locale,            allow_null: false
+            String      :currency,            allow_null: false
             String      :key
             String      :value
-            Integer     :translatable_id,   allow_null: false
-            String      :translatable_type, allow_null: false
+            Integer     :priceable_id,   allow_null: false
+            String      :priceable_type, allow_null: false
             DateTime    :created_at,        allow_null: false
             DateTime    :updated_at,        allow_null: false
-            index [:translatable_id, :translatable_type, :locale, :key], unique: true, name: :index_mobility_text_translations_on_keys
-            index [:translatable_id, :translatable_type, :key], name: :index_mobility_text_translations_on_translatable_attribute
-          end
-
-          DB.create_table? :mobility_string_translations do
-            primary_key :id
-            String      :locale,            allow_null: false
-            String      :key,               allow_null: false
-            String      :value
-            Integer     :translatable_id,   allow_null: false
-            String      :translatable_type, allow_null: false
-            DateTime    :created_at,        allow_null: false
-            DateTime    :updated_at,        allow_null: false
-            index [:translatable_id, :translatable_type, :locale, :key], unique: true, name: :index_mobility_string_translations_on_keys
-            index [:translatable_id, :translatable_type, :key], name: :index_mobility_string_translations_on_translatable_attribute
-            index [:translatable_type, :key, :value, :locale], name: :index_mobility_string_translations_on_query_keys
+            index [:priceable_id, :priceable_type, :currency, :key], unique: true, name: :index_mobility_integer_prices_on_keys
+            index [:priceable_id, :priceable_type, :key], name: :index_mobility_integer_prices_on_priceable_attribute
           end
 
           DB.create_table? :comments do
@@ -139,7 +125,7 @@ module Mobility
 
             DB.create_table? :container_posts do
               primary_key :id
-              jsonb       :translations, default: '{}',    allow_null: false
+              jsonb       :prices, default: '{}',    allow_null: false
               TrueClass   :published
               DateTime    :created_at,                     allow_null: false
               DateTime    :updated_at,                     allow_null: false

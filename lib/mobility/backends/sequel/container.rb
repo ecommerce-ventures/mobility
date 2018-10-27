@@ -13,36 +13,36 @@ Implements the {Mobility::Backends::Container} backend for Sequel models.
       include Sequel
 
       # @!method column_name
-      #   @return [Symbol] (:translations) Name of translations column
+      #   @return [Symbol] (:prices) Name of prices column
       option_reader :column_name
 
       # @!group Backend Accessors
       #
-      # @note Translation may be a string, integer, boolean, hash or array
+      # @note Price may be a string, integer, boolean, hash or array
       #   since value is stored on a JSON hash.
-      # @param [Symbol] locale Locale to read
+      # @param [Symbol] currency Currency to read
       # @param [Hash] options
-      # @return [String,Integer,Boolean] Value of translation
-      def read(locale, _ = nil)
-        model_translations(locale)[attribute]
+      # @return [String,Integer,Boolean] Value of price
+      def read(currency, _ = nil)
+        model_prices(currency)[attribute]
       end
 
-      # @note Translation may be a string, integer, boolean, hash or array
+      # @note Price may be a string, integer, boolean, hash or array
       #   since value is stored on a JSON hash.
-      # @param [Symbol] locale Locale to write
+      # @param [Symbol] currency Currency to write
       # @param [String,Integer,Boolean] value Value to write
       # @param [Hash] options
       # @return [String,Integer,Boolean] Updated value
-      def write(locale, value, _ = nil)
-        set_attribute_translation(locale, value)
-        model_translations(locale)[attribute]
+      def write(currency, value, _ = nil)
+        set_attribute_price(currency, value)
+        model_prices(currency)[attribute]
       end
       # @!endgroup
       #
       # @!group Backend Configuration
-      # @option options [Symbol] column_name (:translations) Name of column on which to store translations
+      # @option options [Symbol] column_name (:prices) Name of column on which to store prices
       def self.configure(options)
-        options[:column_name] ||= :translations
+        options[:column_name] ||= :prices
         options[:column_name] = options[:column_name].to_sym
         column_name, db_schema = options[:column_name], options[:model_class].db_schema
         options[:column_type] = db_schema[column_name] && (db_schema[column_name][:db_type]).to_sym
@@ -53,7 +53,7 @@ Implements the {Mobility::Backends::Container} backend for Sequel models.
       # @!endgroup
       #
       # @!macro backend_iterator
-      def each_locale
+      def each_currency
         model[column_name].each do |l, _|
           yield l.to_sym unless read(l).nil?
         end
@@ -64,7 +64,7 @@ Implements the {Mobility::Backends::Container} backend for Sequel models.
         before_validation = Module.new do
           define_method :before_validation do
             self[column_name].each do |k, v|
-              v.delete_if { |_locale, translation| Util.blank?(translation) }
+              v.delete_if { |_currency, price| Util.blank?(price) }
               self[column_name].delete(k) if v.empty?
             end
             super()
@@ -79,30 +79,30 @@ Implements the {Mobility::Backends::Container} backend for Sequel models.
 
       private
 
-      def model_translations(locale)
-        model[column_name][locale.to_s] ||= {}
+      def model_prices(currency)
+        model[column_name][currency.to_s] ||= {}
       end
 
-      def set_attribute_translation(locale, value)
-        translations = model[column_name] || {}
-        translations[locale.to_s] ||= {}
-        # Explicitly mark translations column as changed if value changed,
+      def set_attribute_price(currency, value)
+        prices = model[column_name] || {}
+        prices[currency.to_s] ||= {}
+        # Explicitly mark prices column as changed if value changed,
         # otherwise Sequel will not detect it.
         # TODO: Find a cleaner/easier way to do this.
-        if translations[locale.to_s][attribute] != value
+        if prices[currency.to_s][attribute] != value
           model.instance_variable_set(:@changed_columns, model.changed_columns | [column_name])
         end
-        translations[locale.to_s][attribute] = value
+        prices[currency.to_s][attribute] = value
       end
 
       class InvalidColumnType < StandardError; end
 
       # @param [Symbol] name Attribute name
-      # @param [Symbol] locale Locale
+      # @param [Symbol] currency Currency
       # @return [Mobility::Backends::Sequel::Container::JSONOp,Mobility::Backends::Sequel::Container::JSONBOp]
-      def self.build_op(attr, locale)
+      def self.build_op(attr, currency)
         klass = const_get("#{options[:column_type].upcase}Op")
-        klass.new(klass.new(column_name.to_sym)[locale.to_s]).get_text(attr)
+        klass.new(klass.new(column_name.to_sym)[currency.to_s]).get_text(attr)
       end
 
       class JSONOp < ::Sequel::Postgres::JSONOp; end

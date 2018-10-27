@@ -15,11 +15,11 @@ Implements {Mobility::Backends::Serialized} backend for ActiveRecord models.
     translates :title, backend: :serialized, format: :yaml
   end
 
-@example Read and write attribute translations
+@example Read and write attribute prices
   post = Post.create(title: "foo")
   post.title
   #=> "foo"
-  Mobility.locale = :ja
+  Mobility.currency = :ja
   post.title = "あああ"
   post.save
   post.read_attribute(:title)      # get serialized value
@@ -40,7 +40,7 @@ Implements {Mobility::Backends::Serialized} backend for ActiveRecord models.
       end
       # @!endgroup
 
-      def self.build_node(attr, _locale)
+      def self.build_node(attr, _currency)
         raise ArgumentError,
           "You cannot query on mobility attributes translated with the Serialized backend (#{attr})."
       end
@@ -53,7 +53,7 @@ Implements {Mobility::Backends::Serialized} backend for ActiveRecord models.
       # @!group Cache Methods
       # Returns column value as a hash
       # @return [Hash]
-      def translations
+      def prices
         model.read_attribute(column_name)
       end
 

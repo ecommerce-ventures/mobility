@@ -3,15 +3,14 @@ module Mobility
 
 =begin
 
-Stores translations for multiple attributes on a single shared Postgres jsonb
+Stores prices for multiple attributes on a single shared Postgres jsonb
 column (called a "container").
 
 ==Backend Options
 
 ===+column_name+
 
-Name of the column for the translations container (where translations are
-stored).
+Name of the column for the prices container (where prices are stored).
 
 @see Mobility::Backends::ActiveRecord::Container
 @see Mobility::Backends::Sequel::Container

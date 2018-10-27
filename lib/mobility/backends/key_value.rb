@@ -5,12 +5,12 @@ module Mobility
   module Backends
 =begin
 
-Stores attribute translation as attribute/value pair on a shared translations
-table, using a polymorphic relationship between a translation class and models
+Stores attribute price as attribute/value pair on a shared prices
+table, using a polymorphic relationship between a price class and models
 using the backend. By default, two tables are assumed to be present supporting
-string and text translations: a +mobility_text_translations+ table for
-text-valued translations and a +string_translations+ table for
-string-valued translations (the only difference being the column type of the
+string and text prices: a +mobility_integer_prices+ table for
+integer-valued prices and a +mobility_float_prices+ table for
+float-valued prices (the only difference being the column type of the
 +value+ column on the table).
 
 ==Backend Options
@@ -19,23 +19,23 @@ string-valued translations (the only difference being the column type of the
 
 Currently, either +:text+ or +:string+ is supported, but any value is allowed
 as long as a corresponding +class_name+ can be found (see below). Determines
-which class to use for translations, which in turn determines which table to
-use to store translations (by default +text_translations+ for text type,
-+string_translations+ for string type).
+which class to use for prices, which in turn determines which table to
+use to store prices (by default +integer_prices+ for text type,
++float_prices+ for string type).
 
 ===+class_name+
 
-Class to use for translations when defining association. By default,
-{Mobility::ActiveRecord::TextTranslation} or
-{Mobility::ActiveRecord::StringTranslation} for ActiveRecord models (similar
+Class to use for prices when defining association. By default,
+{Mobility::ActiveRecord::IntegerPrice} or
+{Mobility::ActiveRecord::FloatPrice} for ActiveRecord models (similar
 for Sequel models). If string is passed in, it will be constantized to get the
 class.
 
 ===+association_name+
 
-Name of association on model. Defaults to +<type>_translations+, which will
-typically be either +:text_translations+ (if +type+ is +:text+) or
-+:string_translations (if +type+ is +:string+). If specified, ensure name does
+Name of association on model. Defaults to +<type>_prices+, which will
+typically be either +:integer_prices+ (if +type+ is +:text+) or
++:float_prices (if +type+ is +:string+). If specified, ensure name does
 not overlap with other methods on model or with the association name used by
 other backends on model (otherwise one will overwrite the other).
 
@@ -51,29 +51,29 @@ other backends on model (otherwise one will overwrite the other).
       #   @return [Symbol] Name of the association
 
       # @!method class_name
-      #   Returns translation class used in polymorphic association.
-      #   @return [Class] Translation class
+      #   Returns price class used in polymorphic association.
+      #   @return [Class] Price class
 
       # @!group Backend Accessors
       # @!macro backend_reader
-      def read(locale, options = {})
-        translation_for(locale, options).value
+      def read(currency, options = {})
+        price_for(currency, options).value
       end
 
       # @!macro backend_writer
-      def write(locale, value, options = {})
-        translation_for(locale, options).value = value
+      def write(currency, value, options = {})
+        price_for(currency, options).value = value
       end
       # @!endgroup
 
       # @!macro backend_iterator
-      def each_locale
-        translations.each { |t| yield(t.locale.to_sym) if t.key == attribute }
+      def each_currency
+        prices.each { |t| yield(t.currency.to_sym) if t.key == attribute }
       end
 
       private
 
-      def translations
+      def prices
         model.send(association_name)
       end
 
@@ -87,10 +87,10 @@ other backends on model (otherwise one will overwrite the other).
       module ClassMethods
         # @!group Backend Configuration
         # @option options [Symbol,String] type Column type to use
-        # @option options [Symbol] associaiton_name (:<type>_translations) Name
-        #   of association method, defaults to +<type>_translations+
-        # @option options [Symbol] class_name Translation class, defaults to
-        #   +Mobility::<ORM>::<type>Translation+
+        # @option options [Symbol] associaiton_name (:<type>_prices) Name
+        #   of association method, defaults to +<type>_prices+
+        # @option options [Symbol] class_name Price class, defaults to
+        #   +Mobility::<ORM>::<type>Price+
         # @raise [ArgumentError] if +type+ is not set, and both +class_name+
         #   and +association_name+ are also not set
         def configure(options)
@@ -121,13 +121,13 @@ each translated model, or set a default option in your configuration.
           end
         end
 
-        def table_alias(attr, locale)
-          table_alias_affix % "#{attr}_#{Mobility.normalize_locale(locale)}"
+        def table_alias(attr, currency)
+          table_alias_affix % "#{attr}_#{Mobility.normalize_currency(currency)}"
         end
       end
 
       module Cache
-        include Plugins::Cache::TranslationCacher.new(:translation_for)
+        include Plugins::Cache::PriceCacher.new(:price_for)
       end
     end
   end

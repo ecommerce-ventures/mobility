@@ -35,14 +35,14 @@ describe "Mobility::Backends::ActiveRecord::Column", orm: :active_record do
     include_cache_key_examples "Comment", :content
 
     describe "#read" do
-      it "returns attribute in locale from appropriate column" do
+      it "returns attribute in currency from appropriate column" do
         aggregate_failures do
           expect(backend.read(:en)).to eq("Good post!")
           expect(backend.read(:ja)).to eq("なかなか面白い記事")
         end
       end
 
-      it "handles dashed locales" do
+      it "handles dashed currencies" do
         expect(backend.read(:"pt-BR")).to eq("Olá")
       end
     end
@@ -58,7 +58,7 @@ describe "Mobility::Backends::ActiveRecord::Column", orm: :active_record do
         end
       end
 
-      it "handles dashed locales" do
+      it "handles dashed currencies" do
         backend.write(:"pt-BR", "Olá Olá")
         expect(comment.content_pt_br).to eq "Olá Olá"
       end
@@ -69,9 +69,9 @@ describe "Mobility::Backends::ActiveRecord::Column", orm: :active_record do
       include_dup_examples 'Comment', :content
     end
 
-    describe "with locale accessors" do
+    describe "with currency accessors" do
       it "still works as usual" do
-        Comment.translates *attributes, backend: :column, cache: false, locale_accessors: true
+        Comment.translates *attributes, backend: :column, cache: false, currency_accessors: true
         backend.write(:en, "Crappy post!")
         expect(comment.content_en).to eq("Crappy post!")
       end
@@ -102,11 +102,11 @@ describe "Mobility::Backends::ActiveRecord::Column", orm: :active_record do
         end
       end
 
-      it "returns nil for locales with no column defined" do
+      it "returns nil for currencies with no column defined" do
         Comment.translates *attributes, backend: :column, cache: false, dirty: true
         comment = Comment.new
 
-        expect(comment.content(locale: :fr)).to eq(nil)
+        expect(comment.content(currency: :fr)).to eq(nil)
       end
     end
 

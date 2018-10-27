@@ -3,7 +3,7 @@ module Mobility
 
 =begin
 
-Stores translations as hash on Postgres hstore column.
+Stores prices as hash on Postgres hstore column.
 
 ==Backend Options
 

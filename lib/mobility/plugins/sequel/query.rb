@@ -18,9 +18,9 @@ See ActiveRecord::Query plugin.
         end
 
         module QueryMethod
-          def __mobility_query_dataset__(locale: Mobility.locale, &block)
+          def __mobility_query_dataset__(currency: Mobility.currency, &block)
             if block_given?
-              VirtualRow.build_query(self, locale, &block)
+              VirtualRow.build_query(self, currency, &block)
             else
               dataset.with_extend(QueryExtension)
             end
@@ -33,14 +33,14 @@ See ActiveRecord::Query plugin.
         class VirtualRow < BasicObject
           attr_reader :__backends
 
-          def initialize(model_class, locale)
-            @model_class, @locale, @__backends = model_class, locale, []
+          def initialize(model_class, currency)
+            @model_class, @currency, @__backends = model_class, currency, []
           end
 
           def method_missing(m, *)
             if @model_class.mobility_attribute?(m)
               @__backends |= [@model_class.mobility_backend_class(m)]
-              @model_class.mobility_backend_class(m).build_op(m.to_s, @locale)
+              @model_class.mobility_backend_class(m).build_op(m.to_s, @currency)
             elsif @model_class.columns.include?(m.to_s)
               ::Sequel::SQL::QualifiedIdentifier.new(@model_class.table_name, m)
             else
@@ -49,22 +49,22 @@ See ActiveRecord::Query plugin.
           end
 
           class << self
-            def build_query(klass, locale, &block)
-              row = new(klass, locale)
+            def build_query(klass, currency, &block)
+              row = new(klass, currency)
               query = block.arity.zero? ? row.instance_eval(&block) : block.call(row)
 
               if ::Sequel::Dataset === query
                 predicates = query.opts[:where]
-                prepare_datasets(query, row.__backends, locale, predicates)
+                prepare_datasets(query, row.__backends, currency, predicates)
               else
-                prepare_datasets(klass.dataset, row.__backends, locale, query).where(query)
+                prepare_datasets(klass.dataset, row.__backends, currency, query).where(query)
               end
             end
 
             private
 
-            def prepare_datasets(dataset, backends, locale, predicates)
-              backends.inject(dataset) { |ds, b| b.prepare_dataset(ds, predicates, locale) }
+            def prepare_datasets(dataset, backends, currency, predicates)
+              backends.inject(dataset) { |ds, b| b.prepare_dataset(ds, predicates, currency) }
             end
           end
         end
@@ -83,10 +83,10 @@ See ActiveRecord::Query plugin.
 
           # Return backend node for attribute name.
           # @param [Symbol,String] name Name of attribute
-          # @param [Symbol] locale Locale
-          # @return [Arel::Node] Arel node for this attribute in given locale
-          def backend_op(name, locale = Mobility.locale)
-            model.mobility_backend_class(name)[name, locale]
+          # @param [Symbol] currency Currency
+          # @return [Arel::Node] Arel node for this attribute in given currency
+          def backend_op(name, currency = Mobility.currency)
+            model.mobility_backend_class(name)[name, currency]
           end
         end
 
@@ -98,14 +98,14 @@ See ActiveRecord::Query plugin.
               return yield unless ::Hash === query_conds.first
 
               cond = query_conds.first.dup
-              locale = cond.delete(:locale) || Mobility.locale
+              currency = cond.delete(:currency) || Mobility.currency
 
-              _build(dataset, cond, locale, query_method, &block)
+              _build(dataset, cond, currency, query_method, &block)
             end
 
             private
 
-            def _build(dataset, cond, locale, query_method)
+            def _build(dataset, cond, currency, query_method)
               keys, predicates = cond.keys, []
               model = dataset.model
 
@@ -114,11 +114,11 @@ See ActiveRecord::Query plugin.
                 next qm if i18n_keys.empty?
 
                 mod_predicates = i18n_keys.map do |key|
-                  build_predicate(dataset.backend_op(key, locale), cond.delete(key))
+                  build_predicate(dataset.backend_op(key, currency), cond.delete(key))
                 end
                 predicates += mod_predicates
 
-                ->(ds) { mod.backend_class.prepare_dataset(qm[ds], mod_predicates, locale) }
+                ->(ds) { mod.backend_class.prepare_dataset(qm[ds], mod_predicates, currency) }
               end
 
               return yield if query_map == IDENTITY

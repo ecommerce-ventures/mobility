@@ -1,6 +1,6 @@
 module Mobility
   module Sequel
-    module Translation
+    module Price
       def self.included(base)
         base.class_eval do
           plugin :validation_helpers
@@ -43,8 +43,8 @@ module Mobility
 
           def validate
             super
-            validates_presence [:locale, :key, :translatable_id, :translatable_type]
-            validates_unique   [:locale, :key, :translatable_id, :translatable_type]
+            validates_presence [:currency, :key, :translatable_id, :translatable_type]
+            validates_unique   [:currency, :key, :translatable_id, :translatable_type]
           end
         end
       end

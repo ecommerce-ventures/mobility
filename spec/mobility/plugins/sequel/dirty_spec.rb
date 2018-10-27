@@ -3,12 +3,12 @@ require "spec_helper"
 describe Mobility::Plugins::Sequel::Dirty, orm: :sequel do
   let(:backend_class) do
     Class.new(Mobility::Backends::Null) do
-      def read(locale, **options)
-        values[locale]
+      def read(currency, **options)
+        values[currency]
       end
 
-      def write(locale, value, **options)
-        values[locale] = value
+      def write(currency, value, **options)
+        values[currency] = value
       end
 
       private
@@ -31,8 +31,8 @@ describe Mobility::Plugins::Sequel::Dirty, orm: :sequel do
   end
 
   describe "tracking changes" do
-    it "tracks changes in one locale" do
-      Mobility.locale = :'pt-BR'
+    it "tracks changes in one currency" do
+      Mobility.currency = :'pt-BR'
       article = Article.new
 
       aggregate_failures "before change" do
@@ -63,7 +63,7 @@ describe Mobility::Plugins::Sequel::Dirty, orm: :sequel do
       end
     end
 
-    it "tracks previous changes in one locale" do
+    it "tracks previous changes in one currency" do
       article = Article.create(title: "foo")
 
       aggregate_failures do
@@ -77,12 +77,12 @@ describe Mobility::Plugins::Sequel::Dirty, orm: :sequel do
       end
     end
 
-    it "tracks changes in multiple locales" do
+    it "tracks changes in multiple currencies" do
       article = Article.new
 
       expect(article.title).to eq(nil)
 
-      aggregate_failures "change in English locale" do
+      aggregate_failures "change in English currency" do
         article.title = "English title"
 
         expect(article.column_changed?(:title)).to eq(true)
@@ -90,8 +90,8 @@ describe Mobility::Plugins::Sequel::Dirty, orm: :sequel do
         expect(article.column_changes).to eq({ :title_en => [nil, "English title"] })
       end
 
-      aggregate_failures "change in French locale" do
-        Mobility.locale = :fr
+      aggregate_failures "change in French currency" do
+        Mobility.currency = :fr
 
         article.title = "Titre en Francais"
         expect(article.column_changed?(:title)).to eq(true)
@@ -100,14 +100,14 @@ describe Mobility::Plugins::Sequel::Dirty, orm: :sequel do
       end
     end
 
-    it "tracks previous changes in multiple locales" do
+    it "tracks previous changes in multiple currencies" do
       article = Article.new
       article.title_en = "English title 1"
       article.title_fr = "Titre en Francais 1"
       article.save
 
       article.title = "English title 2"
-      Mobility.locale = :fr
+      Mobility.currency = :fr
       article.title = "Titre en Francais 2"
 
       article.save
@@ -116,7 +116,7 @@ describe Mobility::Plugins::Sequel::Dirty, orm: :sequel do
                                                        title_fr: ["Titre en Francais 1", "Titre en Francais 2"])
     end
 
-    it "resets changes when locale is set to original value" do
+    it "resets changes when currency is set to original value" do
       article = Article.create(title: "foo")
 
       expect(article.column_changed?(:title)).to eq(false)
@@ -135,14 +135,14 @@ describe Mobility::Plugins::Sequel::Dirty, orm: :sequel do
         expect(article.title).to eq("foo")
       end
 
-      aggregate_failures "changing value in different locale" do
-        Mobility.with_locale(:fr) { article.title = "Titre en Francais" }
+      aggregate_failures "changing value in different currency" do
+        Mobility.with_currency(:fr) { article.title = "Titre en Francais" }
 
         expect(article.column_changed?(:title)).to eq(false)
         expect(article.changed_columns).to eq([:title_fr])
         expect(article.column_changes).to eq({ title_fr: [nil, "Titre en Francais"] })
 
-        Mobility.locale = :fr
+        Mobility.currency = :fr
         expect(article.column_changed?(:title)).to eq(true)
       end
     end
@@ -169,17 +169,17 @@ describe Mobility::Plugins::Sequel::Dirty, orm: :sequel do
         expect(article.column_changes).to eq({})
       end
 
-      aggregate_failures "set fallback locale value" do
-        Mobility.with_locale(:ja) { article.title = "あああ" }
+      aggregate_failures "set fallback currency value" do
+        Mobility.with_currency(:ja) { article.title = "あああ" }
         expect(article.title).to eq("あああ")
         expect(article.column_changed?(:title)).to eq(false)
         expect(article.column_change(:title)).to eq(nil)
         expect(article.changed_columns).to eq([:title_ja])
         expect(article.column_changes).to eq({ title_ja: [nil, "あああ"]})
-        Mobility.with_locale(:ja) { expect(article.title).to eq("あああ") }
+        Mobility.with_currency(:ja) { expect(article.title).to eq("あああ") }
       end
 
-      aggregate_failures "set value in current locale to same value" do
+      aggregate_failures "set value in current currency to same value" do
         article.title = nil
         expect(article.title).to eq("あああ")
         expect(article.column_changed?(:title)).to eq(false)
@@ -188,8 +188,8 @@ describe Mobility::Plugins::Sequel::Dirty, orm: :sequel do
         expect(article.column_changes).to eq({ title_ja: [nil, "あああ"]})
       end
 
-      aggregate_failures "set value in fallback locale to different value" do
-        Mobility.with_locale(:ja) { article.title = "ばばば" }
+      aggregate_failures "set value in fallback currency to different value" do
+        Mobility.with_currency(:ja) { article.title = "ばばば" }
         expect(article.title).to eq("ばばば")
         expect(article.column_changed?(:title)).to eq(false)
         expect(article.column_change(:title)).to eq(nil)
@@ -197,7 +197,7 @@ describe Mobility::Plugins::Sequel::Dirty, orm: :sequel do
         expect(article.column_changes).to eq({ title_ja: [nil, "ばばば"]})
       end
 
-      aggregate_failures "set value in current locale to different value" do
+      aggregate_failures "set value in current currency to different value" do
         article.title = "Title"
         expect(article.title).to eq("Title")
         expect(article.column_changed?(:title)).to eq(true)

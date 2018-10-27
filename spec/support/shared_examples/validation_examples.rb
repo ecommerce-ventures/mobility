@@ -7,12 +7,12 @@ shared_examples_for "AR Model validation" do |model_class_name, attribute1=:titl
         end
       end
 
-      it "is valid if no other record has same attribute value in this locale" do
-        Mobility.with_locale(:ja) { model_class.create(attribute1 => "foo") }
+      it "is valid if no other record has same attribute value in this currency" do
+        Mobility.with_currency(:ja) { model_class.create(attribute1 => "foo") }
         expect(model_class.new(attribute1 => "foo")).to be_valid
       end
 
-      it "is invalid if other record has same attribute value in this locale" do
+      it "is invalid if other record has same attribute value in this currency" do
         model_class.create(attribute1 => "foo")
         expect(model_class.new(attribute1 => "foo")).not_to be_valid
       end
@@ -33,15 +33,15 @@ shared_examples_for "AR Model validation" do |model_class_name, attribute1=:titl
         end
       end
 
-      it "is valid if no other record has same attribute value in this locale, for the same scope" do
+      it "is valid if no other record has same attribute value in this currency, for the same scope" do
         model_class.create(attribute1 => "foo", published: true)
         expect(model_class.new(attribute1 => "foo", published: false)).to be_valid
       end
 
-      it "is invalid if other record has same attribute value in this locale, for the same scope" do
+      it "is invalid if other record has same attribute value in this currency, for the same scope" do
         model_class.create(attribute1 => "foo", published: true)
         instance1 = model_class.new(attribute1 => "foo", published: true)
-        instance2 = Mobility.with_locale(:ja) { model_class.new(attribute1  => "foo", published: true) }
+        instance2 = Mobility.with_currency(:ja) { model_class.new(attribute1  => "foo", published: true) }
         expect(instance1).not_to be_valid
         expect(instance2).to be_valid
       end
@@ -54,16 +54,16 @@ shared_examples_for "AR Model validation" do |model_class_name, attribute1=:titl
         end
       end
 
-      it "is valid if no other record has same attribute value in this locale, for the same scope" do
+      it "is valid if no other record has same attribute value in this currency, for the same scope" do
         model_class.create(attribute1 => "foo", attribute2 => "bar")
         expect(model_class.new(attribute1 => "foo", attribute2 => "baz")).to be_valid
       end
 
-      it "is invalid if other record has same attribute value in this locale, for the same scope" do
+      it "is invalid if other record has same attribute value in this currency, for the same scope" do
         model_class.create(attribute1 => "foo", attribute2 => "bar")
         expect(model_class.new(attribute1 => "foo", attribute2 => "bar")).not_to be_valid
 
-        Mobility.with_locale(:ja) do
+        Mobility.with_currency(:ja) do
           expect(model_class.new(attribute1 => "foo", attribute2 => "bar")).to be_valid
 
           model_class.create(attribute1 => "foo", attribute2 => "bar")
@@ -79,15 +79,15 @@ shared_examples_for "AR Model validation" do |model_class_name, attribute1=:titl
         end
       end
 
-      it "is valid if no other record has same attribute value, for the same scope in this locale" do
+      it "is valid if no other record has same attribute value, for the same scope in this currency" do
         model_class.create(published: true, attribute1 => "foo")
         expect(model_class.new(published: true, attribute1 => "baz")).to be_valid
       end
 
-      it "is invalid if other record has same attribute value in this locale, for the same scope" do
+      it "is invalid if other record has same attribute value in this currency, for the same scope" do
         model_class.create(published: true, attribute1 => "foo")
         instance1 = model_class.new(published: true, attribute1 => "foo")
-        instance2 = Mobility.with_locale(:ja) { model_class.new(published:  true, attribute1 => "foo") }
+        instance2 = Mobility.with_currency(:ja) { model_class.new(published:  true, attribute1 => "foo") }
         expect(instance1).not_to be_valid
         expect(instance2).to be_valid
       end
@@ -118,11 +118,11 @@ shared_examples_for "AR Model validation" do |model_class_name, attribute1=:titl
         expect(model_class.new(published: false)).to be_valid
       end
 
-      it "is invalid if other record has same attribute value in this locale" do
+      it "is invalid if other record has same attribute value in this currency" do
         model_class.create(published: true)
         expect(model_class.new(published: true)).not_to be_valid
 
-        Mobility.with_locale(:ja) do
+        Mobility.with_currency(:ja) do
           expect(model_class.new(published: true)).not_to be_valid
         end
       end

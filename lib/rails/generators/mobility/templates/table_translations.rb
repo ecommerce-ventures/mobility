@@ -11,17 +11,17 @@ class <%= migration_class_name %> < <%= activerecord_migration_class %>
 <% end -%>
 <% end -%>
 
-      t.string  :locale, null: false
+      t.string  :currency, null: false
       t.references :<%=model_table_name.singularize %>, null: false, foreign_key: true, index: false
 
       t.timestamps null: false
     end
 
-    add_index :<%= table_name %>, :locale, name: :<%= translation_index_name("locale") %>
-    add_index :<%= table_name %>, [:<%= foreign_key %>, :locale], name: :<%= translation_index_name(foreign_key, "locale") %>, unique: true
+    add_index :<%= table_name %>, :currency, name: :<%= price_index_name("currency") %>
+    add_index :<%= table_name %>, [:<%= foreign_key %>, :currency], name: :<%= price_index_name(foreign_key, "currency") %>, unique: true
 
 <%- attributes_with_index.each do |attribute| -%>
-  add_index :<%= table_name %>, [:<%= attribute.index_name %><%= attribute.inject_index_options %>, :locale], name: :<%= translation_index_name(attribute.index_name, "locale") %>
+  add_index :<%= table_name %>, [:<%= attribute.index_name %><%= attribute.inject_index_options %>, :currency], name: :<%= price_index_name(attribute.index_name, "currency") %>
 <%- end -%>
   end
 end

@@ -31,33 +31,33 @@ shared_examples_for "AR Model with translated scope" do |model_class_name, a1=:t
         expect(query_scope.where(a1 => nil)).to eq([instance])
       end
 
-      context "with content in different locales" do
+      context "with content in different currencies" do
         before do
-          Mobility.with_locale(:ja) do
+          Mobility.with_currency(:ja) do
             @ja_instance1 = model_class.create(a1 => "foo ja")
             @ja_instance2 = model_class.create(a1 => "foo")
           end
         end
 
-        it "returns correct result when querying on same attribute value in different locale" do
+        it "returns correct result when querying on same attribute value in different currency" do
           expect(query_scope.where(a1 => "foo")).to match_array([@instance1, @instance5])
 
-          Mobility.with_locale(:ja) do
+          Mobility.with_currency(:ja) do
             expect(query_scope.where(a1 => "foo ja")).to eq([@ja_instance1])
             expect(query_scope.where(a1 => "foo")).to eq([@ja_instance2])
           end
         end
 
-        it "returns correct result when querying with locale option" do
-          expect(query_scope.where(a1 => "foo", locale: :en)).to match_array([@instance1, @instance5])
-          expect(query_scope.where(a1 => "foo ja", locale: :ja)).to eq([@ja_instance1])
-          expect(query_scope.where(a1 => "foo", locale: :ja)).to eq([@ja_instance2])
+        it "returns correct result when querying with currency option" do
+          expect(query_scope.where(a1 => "foo", currency: :en)).to match_array([@instance1, @instance5])
+          expect(query_scope.where(a1 => "foo ja", currency: :ja)).to eq([@ja_instance1])
+          expect(query_scope.where(a1 => "foo", currency: :ja)).to eq([@ja_instance2])
         end
 
-        it "returns correct result when querying with locale option twice in separate clauses" do
+        it "returns correct result when querying with currency option twice in separate clauses" do
           @ja_instance1.update(a1 => "foo en")
-          expect(query_scope.where(a1 => "foo ja", locale: :ja).where(a1 => "foo en", locale: :en)).to eq([@ja_instance1])
-          expect(query_scope.where(a1 => "foo", locale: :ja).where(a1 => nil, locale: :en)).to eq([@ja_instance2])
+          expect(query_scope.where(a1 => "foo ja", currency: :ja).where(a1 => "foo en", currency: :en)).to eq([@ja_instance1])
+          expect(query_scope.where(a1 => "foo", currency: :ja).where(a1 => nil, currency: :en)).to eq([@ja_instance2])
         end
       end
 
@@ -111,9 +111,9 @@ shared_examples_for "AR Model with translated scope" do |model_class_name, a1=:t
         expect(query_scope.where(a1 => nil, a2 => nil)).to eq([instance])
       end
 
-      context "with content in different locales" do
+      context "with content in different currencies" do
         before do
-          Mobility.with_locale(:ja) do
+          Mobility.with_currency(:ja) do
             @ja_instance1 = model_class.create(a1 => "foo ja", a2 => "foo content ja")
             @ja_instance2 = model_class.create(a1 => "foo",    a2 => "foo content"   )
             @ja_instance3 = model_class.create(a1 => "foo"                           )
@@ -121,11 +121,11 @@ shared_examples_for "AR Model with translated scope" do |model_class_name, a1=:t
           end
         end
 
-        it "returns correct result when querying on same attribute values in different locale" do
+        it "returns correct result when querying on same attribute values in different currency" do
           expect(query_scope.where(a1 => "foo", a2 => "foo content")).to match_array([@instance2, @instance3])
           expect(query_scope.where(a1 => "foo", a2 => nil)).to eq([@instance1])
 
-          Mobility.with_locale(:ja) do
+          Mobility.with_currency(:ja) do
             expect(query_scope.where(a1 => "foo")).to match_array([@ja_instance2, @ja_instance3])
             expect(query_scope.where(a1 => "foo", a2 => "foo content")).to eq([@ja_instance2])
             expect(query_scope.where(a1 => "foo ja", a2 => "foo content ja")).to eq([@ja_instance1])
@@ -141,7 +141,7 @@ shared_examples_for "AR Model with translated scope" do |model_class_name, a1=:t
         @instance3 = model_class.create(a1 => "baz")
         @instance4 = model_class.create(a1 => nil)
 
-        Mobility.with_locale(:ja) do
+        Mobility.with_currency(:ja) do
           @ja_instance1 = model_class.create(a1 => "foo")
         end
       end
@@ -413,25 +413,25 @@ shared_examples_for "AR Model with translated scope" do |model_class_name, a1=:t
           expect(query { __send__(a1).eq(__send__(a2)) }).to match_array(matching)
         end
 
-        context "with locale option" do
+        context "with currency option" do
           it "handles (a EQ 'foo')" do
             post1 = model_class.new(a1 => "foo en", a2 => "bar en")
-            Mobility.with_locale(:ja) do
+            Mobility.with_currency(:ja) do
               post1.send("#{a1}=", "foo ja")
               post1.send("#{a2}=", "bar ja")
             end
             post1.save
 
             post2 = model_class.new(a1 => "baz en")
-            Mobility.with_locale(:'pt-BR') { post2.send("#{a1}=", "baz pt-br") }
+            Mobility.with_currency(:'pt-BR') { post2.send("#{a1}=", "baz pt-br") }
             post2.save
 
-            expect(query(locale: :en) { __send__(a1).eq("foo en") }).to match_array([post1])
-            expect(query(locale: :en) { __send__(a2).eq("bar en") }).to match_array([post1])
-            expect(query(locale: :ja) { __send__(a1).eq("foo ja") }).to match_array([post1])
-            expect(query(locale: :ja) { __send__(a2).eq("bar ja") }).to match_array([post1])
-            expect(query(locale: :en) { __send__(a1).eq("baz en") }).to match_array([post2])
-            expect(query(locale: :'pt-BR') { __send__(a1).eq("baz pt-br") }).to match_array([post2])
+            expect(query(currency: :en) { __send__(a1).eq("foo en") }).to match_array([post1])
+            expect(query(currency: :en) { __send__(a2).eq("bar en") }).to match_array([post1])
+            expect(query(currency: :ja) { __send__(a1).eq("foo ja") }).to match_array([post1])
+            expect(query(currency: :ja) { __send__(a2).eq("bar ja") }).to match_array([post1])
+            expect(query(currency: :en) { __send__(a1).eq("baz en") }).to match_array([post2])
+            expect(query(currency: :'pt-BR') { __send__(a1).eq("baz pt-br") }).to match_array([post2])
           end
         end
       end
@@ -566,30 +566,30 @@ shared_examples_for "AR Model with translated scope" do |model_class_name, a1=:t
     end
 
     context "multi-block querying" do
-      it "combines multiple locales with non-nil values" do
+      it "combines multiple currencies with non-nil values" do
         post1 = model_class.new(a1 => "foo en", a2 => "bar en")
-        Mobility.with_locale(:ja) do
+        Mobility.with_currency(:ja) do
           post1.send("#{a1}=", "foo ja")
           post1.send("#{a2}=", "bar ja")
         end
         post1.save
 
         post2 = model_class.new(a1 => "baz en")
-        Mobility.with_locale(:'pt-BR') { post2.send("#{a1}=", "baz pt-br") }
+        Mobility.with_currency(:'pt-BR') { post2.send("#{a1}=", "baz pt-br") }
         post2.save
 
         aggregate_failures do
           expect(
-            query(locale: :en) { |en|
-              query(locale: :ja) { |ja|
+            query(currency: :en) { |en|
+              query(currency: :ja) { |ja|
                 en.__send__(a1).eq("foo en").and(ja.__send__(a2).eq("bar ja"))
               }
             }
           ).to match_array([post1])
 
           expect(
-            query(locale: :en) { |en|
-              query(locale: :'pt-BR') { |pt|
+            query(currency: :en) { |en|
+              query(currency: :'pt-BR') { |pt|
                 en.__send__(a1).eq("baz en").and(pt.__send__(a1).eq("baz pt-br"))
               }
             }
@@ -597,16 +597,16 @@ shared_examples_for "AR Model with translated scope" do |model_class_name, a1=:t
         end
       end
 
-      it "combines multiple locales with nil and non-nil values" do
+      it "combines multiple currencies with nil and non-nil values" do
         post1 = model_class.new(a1 => "foo en")
-        Mobility.with_locale(:ja) { post1.send("#{a1}=", "foo ja") }
+        Mobility.with_currency(:ja) { post1.send("#{a1}=", "foo ja") }
         post1.save
 
         post2 = model_class.create(a1 => "foo en")
 
         expect(
-          query(locale: :en) { |en|
-            query(locale: :ja) { |ja|
+          query(currency: :en) { |en|
+            query(currency: :ja) { |ja|
               en.__send__(a1).eq("foo en").and(ja.__send__(a1).eq(nil))
             }
           }
@@ -649,34 +649,34 @@ shared_examples_for "Sequel Model with translated dataset" do |model_class_name,
         expect(query_scope.where(a1 => nil).select_all(table_name).all).to eq([instance])
       end
 
-      context "with content in different locales" do
+      context "with content in different currencies" do
         before do
-          Mobility.with_locale(:ja) do
+          Mobility.with_currency(:ja) do
             @ja_instance1 = model_class.create(a1 => "foo ja")
             @ja_instance2 = model_class.create(a1 => "foo")
           end
         end
 
-        it "returns correct result when querying on same attribute value in different locale" do
+        it "returns correct result when querying on same attribute value in different currency" do
           expect(query_scope.where(a1 => "foo").select_all(table_name).all).to match_array([@instance1, @instance5])
 
-          Mobility.with_locale(:ja) do
+          Mobility.with_currency(:ja) do
             expect(query_scope.where(a1 => "foo ja").select_all(table_name).all).to eq([@ja_instance1])
             expect(query_scope.where(a1 => "foo").select_all(table_name).all).to eq([@ja_instance2])
           end
         end
 
-        it "returns correct result when querying with locale option" do
-          expect(query_scope.where(a1 => "foo", locale: :en).select_all(table_name).all).to match_array([@instance1, @instance5])
-          expect(query_scope.where(a1 => "foo ja", locale: :ja).select_all(table_name).all).to eq([@ja_instance1])
-          expect(query_scope.where(a1 => "foo", locale: :ja).select_all(table_name).all).to eq([@ja_instance2])
+        it "returns correct result when querying with currency option" do
+          expect(query_scope.where(a1 => "foo", currency: :en).select_all(table_name).all).to match_array([@instance1, @instance5])
+          expect(query_scope.where(a1 => "foo ja", currency: :ja).select_all(table_name).all).to eq([@ja_instance1])
+          expect(query_scope.where(a1 => "foo", currency: :ja).select_all(table_name).all).to eq([@ja_instance2])
         end
 
-        it "returns correct result when querying with locale option twice in separate clauses" do
+        it "returns correct result when querying with currency option twice in separate clauses" do
           @ja_instance1.update(a1 => "foo en")
           @ja_instance1.reload
-          expect(query_scope.where(a1 => "foo ja", locale: :ja).where(a1 => "foo en", locale: :en).select_all(table_name).all).to eq([@ja_instance1])
-          expect(query_scope.where(a1 => "foo", locale: :ja).where(a1 => nil, locale: :en).select_all(table_name).all).to eq([@ja_instance2])
+          expect(query_scope.where(a1 => "foo ja", currency: :ja).where(a1 => "foo en", currency: :en).select_all(table_name).all).to eq([@ja_instance1])
+          expect(query_scope.where(a1 => "foo", currency: :ja).where(a1 => nil, currency: :en).select_all(table_name).all).to eq([@ja_instance2])
         end
       end
     end
@@ -715,9 +715,9 @@ shared_examples_for "Sequel Model with translated dataset" do |model_class_name,
         expect(query_scope.where(a1 => nil, a2 => nil).select_all(table_name).all).to eq([instance])
       end
 
-      context "with content in different locales" do
+      context "with content in different currencies" do
         before do
-          Mobility.with_locale(:ja) do
+          Mobility.with_currency(:ja) do
             @ja_instance1 = model_class.create(a1 => "foo ja", a2 => "foo content ja")
             @ja_instance2 = model_class.create(a1 => "foo",    a2 => "foo content"   )
             @ja_instance3 = model_class.create(a1 => "foo"                           )
@@ -725,11 +725,11 @@ shared_examples_for "Sequel Model with translated dataset" do |model_class_name,
           end
         end
 
-        it "returns correct result when querying on same attribute values in different locale" do
+        it "returns correct result when querying on same attribute values in different currency" do
           expect(query_scope.where(a1 => "foo", a2 => "foo content").select_all(table_name).all).to match_array([@instance2, @instance3])
           expect(query_scope.where(a1 => "foo", a2 => nil).select_all(table_name).all).to eq([@instance1])
 
-          Mobility.with_locale(:ja) do
+          Mobility.with_currency(:ja) do
             expect(query_scope.where(a1 => "foo").select_all(table_name).all).to match_array([@ja_instance2, @ja_instance3])
             expect(query_scope.where(a1 => "foo", a2 => "foo content").select_all(table_name).all).to eq([@ja_instance2])
             expect(query_scope.where(a1 => "foo ja", a2 => "foo content ja").select_all(table_name).all).to eq([@ja_instance1])
@@ -744,7 +744,7 @@ shared_examples_for "Sequel Model with translated dataset" do |model_class_name,
         @instance2 = model_class.create(a1 => "bar")
         @instance3 = model_class.create(a1 => "baz")
 
-        Mobility.with_locale(:ja) do
+        Mobility.with_currency(:ja) do
           @ja_instance1 = model_class.create(a1 => "foo")
         end
       end
@@ -805,7 +805,7 @@ shared_examples_for "Sequel Model with translated dataset" do |model_class_name,
     end
 
     it "works with set of translated and untranslated attributes" do
-      # For backends that join translation tables (Table and KeyValue backends)
+      # For backends that join price tables (Table and KeyValue backends)
       # this fails because the table will be inner join'ed, excluding the
       # result which satisfies the second (or) condition. This is impossible to
       # avoid without modification of an earlier dataset, which is probably not
@@ -847,25 +847,25 @@ shared_examples_for "Sequel Model with translated dataset" do |model_class_name,
           expect(query { __send__(a1) =~ __send__(a2) }.select_all(table_name).all).to match_array(matching)
         end
 
-        context "with locale option" do
+        context "with currency option" do
           it "handles (a EQ 'foo')" do
             post1 = model_class.new(a1 => "foo en", a2 => "bar en")
-            Mobility.with_locale(:ja) do
+            Mobility.with_currency(:ja) do
               post1.send("#{a1}=", "foo ja")
               post1.send("#{a2}=", "bar ja")
             end
             post1.save
 
             post2 = model_class.new(a1 => "baz en")
-            Mobility.with_locale(:'pt-BR') { post2.send("#{a1}=", "baz pt-br") }
+            Mobility.with_currency(:'pt-BR') { post2.send("#{a1}=", "baz pt-br") }
             post2.save
 
-            expect(query(locale: :en) { __send__(a1) =~ "foo en" }.select_all(table_name).all).to match_array([post1])
-            expect(query(locale: :en) { __send__(a2) =~ "bar en" }.select_all(table_name).all).to match_array([post1])
-            expect(query(locale: :ja) { __send__(a1) =~ "foo ja" }.select_all(table_name).all).to match_array([post1])
-            expect(query(locale: :ja) { __send__(a2) =~ "bar ja" }.select_all(table_name).all).to match_array([post1])
-            expect(query(locale: :en) { __send__(a1) =~ "baz en" }.select_all(table_name).all).to match_array([post2])
-            expect(query(locale: :'pt-BR') { __send__(a1) =~ "baz pt-br" }.select_all(table_name).all).to match_array([post2])
+            expect(query(currency: :en) { __send__(a1) =~ "foo en" }.select_all(table_name).all).to match_array([post1])
+            expect(query(currency: :en) { __send__(a2) =~ "bar en" }.select_all(table_name).all).to match_array([post1])
+            expect(query(currency: :ja) { __send__(a1) =~ "foo ja" }.select_all(table_name).all).to match_array([post1])
+            expect(query(currency: :ja) { __send__(a2) =~ "bar ja" }.select_all(table_name).all).to match_array([post1])
+            expect(query(currency: :en) { __send__(a1) =~ "baz en" }.select_all(table_name).all).to match_array([post2])
+            expect(query(currency: :'pt-BR') { __send__(a1) =~ "baz pt-br" }.select_all(table_name).all).to match_array([post2])
           end
         end
       end
@@ -939,30 +939,30 @@ shared_examples_for "Sequel Model with translated dataset" do |model_class_name,
     end
 
     context "multi-block querying" do
-      it "combines multiple locales" do
+      it "combines multiple currencies" do
         post1 = model_class.new(a1 => "foo en", a2 => "bar en")
-        Mobility.with_locale(:ja) do
+        Mobility.with_currency(:ja) do
           post1.send("#{a1}=", "foo ja")
           post1.send("#{a2}=", "bar ja")
         end
         post1.save
 
         post2 = model_class.new(a1 => "baz en")
-        Mobility.with_locale(:'pt-BR') { post2.send("#{a1}=", "baz pt-br") }
+        Mobility.with_currency(:'pt-BR') { post2.send("#{a1}=", "baz pt-br") }
         post2.save
 
         aggregate_failures do
           expect(
-            query(locale: :en) { |en|
-              query(locale: :ja) { |ja|
+            query(currency: :en) { |en|
+              query(currency: :ja) { |ja|
                 (en.__send__(a1) =~ "foo en") & (ja.__send__(a2) =~ "bar ja")
               }
             }.select_all(table_name).all
           ).to match_array([post1])
 
           expect(
-            query(locale: :en) { |en|
-              query(locale: :'pt-BR') { |pt|
+            query(currency: :en) { |en|
+              query(currency: :'pt-BR') { |pt|
                 (en.__send__(a1) =~ "baz en") & (pt.__send__(a1) =~ "baz pt-br")
               }
             }.select_all(table_name).all

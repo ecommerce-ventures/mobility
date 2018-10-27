@@ -16,11 +16,11 @@ Internal class used by ActiveRecord backends backed by a Postgres data type
         include HashValued
 
         # @!macro backend_iterator
-        def each_locale
+        def each_currency
           super { |l| yield l.to_sym }
         end
 
-        def translations
+        def prices
           model.read_attribute(column_name)
         end
 
@@ -31,9 +31,9 @@ Internal class used by ActiveRecord backends backed by a Postgres data type
         class Coder
           def self.dump(obj)
             if obj.is_a? ::Hash
-              obj.inject({}) do |translations, (locale, value)|
-                translations[locale] = value if value.present?
-                translations
+              obj.inject({}) do |prices, (currency, value)|
+                prices[currency] = value if value.present?
+                prices
               end
             else
               raise ArgumentError, "Attribute is supposed to be a Hash, but was a #{obj.class}. -- #{obj.inspect}"

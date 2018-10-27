@@ -88,15 +88,15 @@ AR::Dirty plugin adds support for the following persistence-specific methods
 
             @attribute_names.each do |name|
               define_method :"saved_change_to_#{name}?" do
-                previous_changes.include?(Mobility.normalize_locale_accessor(name))
+                previous_changes.include?(Mobility.normalize_currency_accessor(name))
               end
 
               define_method :"saved_change_to_#{name}" do
-                previous_changes[Mobility.normalize_locale_accessor(name)]
+                previous_changes[Mobility.normalize_currency_accessor(name)]
               end
 
               define_method :"#{name}_before_last_save" do
-                previous_changes[Mobility.normalize_locale_accessor(name)].first
+                previous_changes[Mobility.normalize_currency_accessor(name)].first
               end
 
               alias_method :"will_save_change_to_#{name}?", :"#{name}_changed?"

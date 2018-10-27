@@ -19,7 +19,7 @@ describe "Mobility::Plugins::ActiveRecord::Query", orm: :active_record do
     end
 
     it "does not modify original opts hash" do
-      options = { title: "foo", locale: :en }
+      options = { title: "foo", currency: :en }
       options_ = options.dup
       Article.i18n.where(options_)
       expect(options_).to eq(options)
@@ -64,9 +64,9 @@ describe "Mobility::Plugins::ActiveRecord::Query", orm: :active_record do
     # TODO: Test more thoroughly
     context "single-block querying" do
       context "multiple backends" do
-        it "does not join translations table when backend node not included in predicate" do
+        it "does not join prices table when backend node not included in predicate" do
           Article.i18n { title; content.eq("bazcontent").or(author.eq("foobarauthor")) }.tap do |relation|
-            expect(relation.to_sql).not_to match /article_translations/
+            expect(relation.to_sql).not_to match /article_prices/
           end
         end
       end

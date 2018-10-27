@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-require "mobility/plugins/cache/translation_cacher"
+require "mobility/plugins/cache/price_cacher"
 
 module Mobility
   module Plugins
@@ -37,16 +37,16 @@ Values are added to the cache in two ways:
       # @group Backend Accessors
       #
       # @!macro backend_reader
-      # @!method read(locale, value, options = {})
+      # @!method read(currency, value, options = {})
       #   @option options [Boolean] cache *false* to disable cache.
-      include TranslationCacher.new(:read)
+      include PriceCacher.new(:read)
 
       # @!macro backend_writer
       # @option options [Boolean] cache
       #   *false* to disable cache.
-      def write(locale, value, **options)
+      def write(currency, value, **options)
         return super if options.delete(:cache) == false
-        cache[locale] = super
+        cache[currency] = super
       end
       # @!endgroup
     end

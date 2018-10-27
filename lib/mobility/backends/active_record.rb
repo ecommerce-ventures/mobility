@@ -8,24 +8,24 @@ module Mobility
 
       module ClassMethods
         # @param [Symbol] name Attribute name
-        # @param [Symbol] locale Locale
-        def [](name, locale)
-          build_node(name.to_s, locale)
+        # @param [Symbol] currency Currency
+        def [](name, currency)
+          build_node(name.to_s, currency)
         end
 
         # @param [String] _attr Attribute name
-        # @param [Symbol] _locale Locale
+        # @param [Symbol] _currency Currency
         # @return Arel node for this translated attribute
-        def build_node(_attr, _locale)
+        def build_node(_attr, _currency)
           raise NotImplementedError
         end
 
         # @param [ActiveRecord::Relation] relation Relation to scope
         # @param [Object] predicate Arel predicate
-        # @param [Symbol] locale (Mobility.locale) Locale
+        # @param [Symbol] currency (Mobility.currency) Currency
         # @option [Boolean] invert
         # @return [ActiveRecord::Relation] Relation with scope added
-        def apply_scope(relation, _predicate, _locale = Mobility.locale, invert: false)
+        def apply_scope(relation, _predicate, _currency = Mobility.currency, invert: false)
           relation
         end
 

@@ -8,8 +8,8 @@ describe Mobility::Plugins::Fallbacks do
       backend_class.include(Mobility::Backend)
       backend_subclass = backend_class.with_options(fallbacks: fallbacks)
       backend_subclass.class_eval do
-        def read(locale, **options)
-          Mobility.enforce_available_locales!(locale)
+        def read(currency, **options)
+          Mobility.enforce_available_currencies!(currency)
           return "bar" if options[:bar]
           {
             "title" => {
@@ -17,7 +17,7 @@ describe Mobility::Plugins::Fallbacks do
               :ja => "フー",
               :'pt' => ""
             }
-          }[attribute][locale]
+          }[attribute][currency]
         end
       end
       Class.new(backend_subclass).include(described_class.new(fallbacks))
@@ -32,11 +32,11 @@ describe Mobility::Plugins::Fallbacks do
         expect(subject.read(:ja)).to eq("フー")
       end
 
-      it "falls through to fallback locale when value is nil" do
+      it "falls through to fallback currency when value is nil" do
         expect(subject.read(:"en-US")).to eq("foo")
       end
 
-      it "falls through to fallback locale when value is blank" do
+      it "falls through to fallback currency when value is blank" do
         expect(subject.read(:pt)).to eq("foo")
       end
 
@@ -48,19 +48,19 @@ describe Mobility::Plugins::Fallbacks do
         expect(subject.read(:"en-US", fallback: false)).to eq(nil)
       end
 
-      it "falls through to fallback locale when fallback: true option is passed" do
+      it "falls through to fallback currency when fallback: true option is passed" do
         expect(subject.read(:"en-US", fallback: true)).to eq("foo")
       end
 
-      it "uses locale passed in as value of fallback option when present" do
+      it "uses currency passed in as value of fallback option when present" do
         expect(subject.read(:"en-US", fallback: :ja)).to eq("フー")
       end
 
-      it "uses array of locales passed in as value of fallback options when present" do
+      it "uses array of currencies passed in as value of fallback options when present" do
         expect(subject.read(:"en-US", fallback: [:pl, :'de-DE'])).to eq("foo")
       end
 
-      it "passes options to getter in fallback locale" do
+      it "passes options to getter in fallback currency" do
         expect(subject.read(:'en-US', bar: true)).to eq("bar")
       end
 
@@ -74,20 +74,11 @@ describe Mobility::Plugins::Fallbacks do
     context "fallbacks is true" do
       let(:fallbacks) { true }
 
-      # @note I18n changed its behavior in 1.1 (see: https://github.com/svenfuchs/i18n/pull/415)
-      #   To correctly test all versions, we actually generate fallbacks and
-      #   determine what the value should be, then check that it matches the
-      #   actual fallback value.
-      # TODO: Simplify this when support for I18n < 1.1 is dropped.
       it "uses default fallbacks" do
-        original_default_locale = I18n.default_locale
-        I18n.default_locale = :ja
-        fallbacks = Mobility::Fallbacks.build({})
-        locales = fallbacks[:"en-US"]
-        # in I18n 1.1 value is nil here
-        value = locales.map { |locale| subject.read(locale, locale: true) }.compact.first
+        original_default_currency = Mobility.default_currency
+        Mobility.default_currency = :ja
         expect(subject.read(:"en-US")).to eq(value)
-        I18n.default_locale = original_default_locale
+        Mobility.default_currency = original_default_currency
       end
     end
 
@@ -95,19 +86,19 @@ describe Mobility::Plugins::Fallbacks do
       let(:fallbacks) { nil }
 
       it "does not use fallbacks when fallback option is false or nil" do
-        original_default_locale = I18n.default_locale
-        I18n.default_locale = :ja
+        original_default_currency = Mobility.default_currency
+        Mobility.default_currency = :ja
         expect(subject.read(:"en-US")).to eq(nil)
-        I18n.default_locale = original_default_locale
+        Mobility.default_currency = original_default_currency
         expect(subject.read(:"en-US", fallback: false)).to eq(nil)
-        I18n.default_locale = original_default_locale
+        Mobility.default_currency = original_default_currency
       end
 
-      it "uses locale passed in as value of fallback option when present" do
+      it "uses currency passed in as value of fallback option when present" do
         expect(subject.read(:"en-US", fallback: :ja)).to eq("フー")
       end
 
-      it "uses array of locales passed in as value of fallback options when present" do
+      it "uses array of currencies passed in as value of fallback options when present" do
         expect(subject.read(:"en-US", fallback: [:pl, :'de-DE'])).to eq("foo")
       end
 

@@ -19,8 +19,8 @@ module Mobility
             t.timestamps null: false
           end
 
-          create_table "article_translations" do |t|
-            t.string :locale
+          create_table "article_prices" do |t|
+            t.string :currency
             t.integer :article_id
             t.string :title
             t.string :subtitle
@@ -34,42 +34,42 @@ module Mobility
             t.timestamps null: false
           end
 
-          create_table "multitable_post_translations" do |t|
-            t.string :locale
+          create_table "multitable_post_prices" do |t|
+            t.string :currency
             t.integer :multitable_post_id
             t.string :title
             t.timestamps null: false
           end
 
-          create_table "multitable_post_foo_translations" do |t|
-            t.string :locale
+          create_table "multitable_post_foo_prices" do |t|
+            t.string :currency
             t.integer :multitable_post_id
             t.string :foo
             t.timestamps null: false
           end
 
-          create_table "mobility_string_translations" do |t|
-            t.string  :locale,            null: false
+          create_table "mobility_integer_prices" do |t|
+            t.string  :currency,          null: false
             t.string  :key,               null: false
-            t.string  :value,             null: false
-            t.integer :translatable_id,   null: false
-            t.string  :translatable_type, null: false
+            t.integer :value,             null: false
+            t.integer :priceable_id,   null: false
+            t.string  :priceable_type, null: false
             t.timestamps                  null: false
           end
-          add_index :mobility_string_translations, [:translatable_id, :translatable_type, :locale, :key], unique: true, name: :index_mobility_string_translations_on_keys
-          add_index :mobility_string_translations, [:translatable_id, :translatable_type, :key], name: :index_mobility_string_translations_on_translatable_attribute
-          add_index :mobility_string_translations, [:translatable_type, :key, :value, :locale], name: :index_mobility_string_translations_on_query_keys
+          add_index :mobility_integer_prices, [:priceable_id, :priceable_type, :currency, :key], unique: true, name: :index_mobility_integer_prices_on_keys
+          add_index :mobility_integer_prices, [:priceable_id, :priceable_type, :key], name: :index_mobility_integer_prices_on_priceable_attribute
 
-          create_table "mobility_text_translations" do |t|
-            t.string  :locale,            null: false
+          create_table "mobility_float_prices" do |t|
+            t.string  :currency,          null: false
             t.string  :key,               null: false
-            t.text    :value,             null: false
-            t.integer :translatable_id,   null: false
-            t.string  :translatable_type, null: false
+            t.float   :value,             null: false
+            t.integer :priceable_id,   null: false
+            t.string  :priceable_type, null: false
             t.timestamps                  null: false
           end
-          add_index :mobility_text_translations, [:translatable_id, :translatable_type, :locale, :key], unique: true, name: :index_mobility_text_translations_on_keys
-          add_index :mobility_text_translations, [:translatable_id, :translatable_type, :key], name: :index_mobility_text_translations_on_translatable_attribute
+          add_index :mobility_float_prices, [:priceable_id, :priceable_type, :currency, :key], unique: true, name: :index_mobility_float_prices_on_keys
+          add_index :mobility_float_prices, [:priceable_id, :priceable_type, :key], name: :index_mobility_float_prices_on_priceable_attribute
+
 
           create_table "comments" do |t|
             t.text :content_en
@@ -108,7 +108,7 @@ module Mobility
             end
 
             create_table "container_posts" do |t|
-              t.jsonb :translations, default: {}
+              t.jsonb :prices, default: {}
               t.boolean :published
               t.timestamps null: false
             end

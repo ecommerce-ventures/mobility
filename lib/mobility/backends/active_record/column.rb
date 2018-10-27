@@ -8,14 +8,14 @@ module Mobility
 
 Implements the {Mobility::Backends::Column} backend for ActiveRecord models.
 
-You can use the +mobility:translations+ generator to create a migration adding
+You can use the +mobility:prices+ generator to create a migration adding
 translatable columns to the model table with:
 
-  rails generate mobility:translations post title:string
+  rails generate mobility:prices post title:string
 
-The generated migration will add columns +title_<locale>+ for every locale in
-+Mobility.available_locales+ (i.e. +I18n.available_locales+). (The generator
-can be run again to add new attributes or locales.)
+The generated migration will add columns +title_<currency>+ for every currency in
++Mobility.available_currencies+ (i.e. +Money::Currency.all+). (The generator
+can be run again to add new attributes or currencies.)
 
 @example
   class Post < ActiveRecord::Base
@@ -23,7 +23,7 @@ can be run again to add new attributes or locales.)
     translates :title, backend: :column
   end
 
-  Mobility.locale = :en
+  Mobility.currency = :en
   post = Post.create(title: "foo")
   post.title
   #=> "foo"
@@ -36,37 +36,37 @@ can be run again to add new attributes or locales.)
 
       # @!group Backend Accessors
       # @!macro backend_reader
-      def read(locale, _ = {})
-        model.read_attribute(column(locale))
+      def read(currency, _ = {})
+        model.read_attribute(column(currency))
       end
 
       # @!macro backend_writer
-      def write(locale, value, _ = {})
-        model.send(:write_attribute, column(locale), value)
+      def write(currency, value, _ = {})
+        model.send(:write_attribute, column(currency), value)
       end
       # @!endgroup
 
       # @!macro backend_iterator
-      def each_locale
-        available_locales.each { |l| yield(l) if present?(l) }
+      def each_currency
+        available_currencies.each { |l| yield(l) if present?(l) }
       end
 
       # @param [String] attr Attribute name
-      # @param [Symbol] locale Locale
-      # @return [Arel::Attributes::Attribute] Arel node for translation column
+      # @param [Symbol] currency Currency
+      # @return [Arel::Attributes::Attribute] Arel node for price column
       #   on model table
-      def self.build_node(attr, locale)
-        model_class.arel_table[Column.column_name_for(attr, locale)]
+      def self.build_node(attr, currency)
+        model_class.arel_table[Column.column_name_for(attr, currency)]
           .extend(::Mobility::Arel::MobilityExpressions)
       end
 
       private
 
-      def available_locales
-        @available_locales ||= get_column_locales
+      def available_currencies
+        @available_currencies ||= get_column_currencies
       end
 
-      def get_column_locales
+      def get_column_currencies
         column_name_regex = /\A#{attribute}_([a-z]{2}(_[a-z]{2})?)\z/.freeze
         model.class.columns.map do |c|
           (match = c.name.match(column_name_regex)) && match[1].to_sym

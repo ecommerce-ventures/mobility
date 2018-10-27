@@ -19,7 +19,7 @@ describe "Mobility::Backends::ActiveRecord::Table", orm: :active_record do
     include_dup_examples "Article"
     include_cache_key_examples "Article"
 
-    it "finds translation on every read/write" do
+    it "finds price on every read/write" do
       article = Article.new
       title_backend = article.mobility_backends[:title]
       expect(title_backend.model.send(title_backend.association_name)).to receive(:find).thrice.and_call_original
@@ -33,7 +33,7 @@ describe "Mobility::Backends::ActiveRecord::Table", orm: :active_record do
     before { Article.translates :title, :content, backend: :table, cache: true }
     include_accessor_examples "Article"
 
-    it "only fetches translation once per locale" do
+    it "only fetches price once per currency" do
       article = Article.new
       title_backend = article.mobility_backends[:title]
 
@@ -47,44 +47,44 @@ describe "Mobility::Backends::ActiveRecord::Table", orm: :active_record do
       end
     end
 
-    it "resets model translations cache when model is saved or reloaded" do
+    it "resets model prices cache when model is saved or reloaded" do
       article = Article.new
       title_backend = article.mobility_backends[:title]
       content_backend = article.mobility_backends[:content]
 
       aggregate_failures "cacheing reads" do
         title_backend.read(:en)
-        expect(article.instance_variable_get(:@__mobility_translations_cache).size).to eq(1)
+        expect(article.instance_variable_get(:@__mobility_prices_cache).size).to eq(1)
         content_backend.read(:en)
-        expect(article.instance_variable_get(:@__mobility_translations_cache).size).to eq(1)
+        expect(article.instance_variable_get(:@__mobility_prices_cache).size).to eq(1)
         content_backend.read(:ja)
-        expect(article.instance_variable_get(:@__mobility_translations_cache).size).to eq(2)
+        expect(article.instance_variable_get(:@__mobility_prices_cache).size).to eq(2)
       end
 
       aggregate_failures "resetting cache" do
         article.save
-        expect(article.instance_variable_get(:@__mobility_translations_cache).size).to eq(0)
+        expect(article.instance_variable_get(:@__mobility_prices_cache).size).to eq(0)
 
         content_backend.read(:ja)
-        expect(article.instance_variable_get(:@__mobility_translations_cache).size).to eq(1)
+        expect(article.instance_variable_get(:@__mobility_prices_cache).size).to eq(1)
         article.reload
-        expect(article.instance_variable_get(:@__mobility_translations_cache).size).to eq(0)
+        expect(article.instance_variable_get(:@__mobility_prices_cache).size).to eq(0)
       end
     end
   end
 
-  describe "translations association" do
+  describe "prices association" do
     before { Article.translates :title, :content, backend: :table, cache: true }
 
-    describe "cleaning up blank translations" do
+    describe "cleaning up blank prices" do
       let(:title_backend) { article.mobility_backends[:title] }
 
-      it "builds nil translations when reading but does not save them" do
-        Mobility.locale = :en
+      it "builds nil prices when reading but does not save them" do
+        Mobility.currency = :en
         article = Article.new(title: "New Article")
         association_name = article.mobility_backends[:title].association_name
 
-        Mobility.locale = :ja
+        Mobility.currency = :ja
         article.title
 
         aggregate_failures do
@@ -95,15 +95,15 @@ describe "Mobility::Backends::ActiveRecord::Table", orm: :active_record do
         end
       end
 
-      it "removes nil translations when saving persisted record" do
-        Mobility.locale = :en
+      it "removes nil prices when saving persisted record" do
+        Mobility.currency = :en
         article = Article.create(title: "New Article")
         association_name = article.mobility_backends[:title].association_name
 
         aggregate_failures do
           expect(article.send(association_name).size).to eq(1)
 
-          Mobility.locale = :ja
+          Mobility.currency = :ja
           article.title = "新規記事"
           expect(article.send(association_name).size).to eq(2)
 
@@ -121,7 +121,7 @@ describe "Mobility::Backends::ActiveRecord::Table", orm: :active_record do
 
   # Using Article to test separate backends with separate tables fails
   # when these specs are run together with other specs, due to code
-  # assigning subclasses (Article::Translation, Article::FooTranslation).
+  # assigning subclasses (Article::Price, Article::FooPrice).
   # Maybe an issue with RSpec const stubbing.
   context "attributes defined separately" do
     include_accessor_examples "MultitablePost", :title, :foo
@@ -142,12 +142,12 @@ describe "Mobility::Backends::ActiveRecord::Table", orm: :active_record do
     describe "#read" do
       before do
         [
-          { locale: "en", title: "New Article", content: "Once upon a time...", translated_model: article },
-          { locale: "ja", title: "新規記事", content: "昔々あるところに…", translated_model: article }
-        ].each { |attrs| Article::Translation.create!(attrs) }
+          { currency: "en", title: "New Article", content: "Once upon a time...", translated_model: article },
+          { currency: "ja", title: "新規記事", content: "昔々あるところに…", translated_model: article }
+        ].each { |attrs| Article::Price.create!(attrs) }
       end
 
-      it "returns attribute in locale from model translations table" do
+      it "returns attribute in currency from model prices table" do
         aggregate_failures do
           expect(title_backend.read(:en)).to eq("New Article")
           expect(content_backend.read(:en)).to eq("Once upon a time...")
@@ -156,11 +156,11 @@ describe "Mobility::Backends::ActiveRecord::Table", orm: :active_record do
         end
       end
 
-      it "returns nil if no translation exists" do
+      it "returns nil if no price exists" do
         expect(title_backend.read(:de)).to eq(nil)
       end
 
-      it "builds translation if no translation exists" do
+      it "builds price if no price exists" do
         expect {
           title_backend.read(:de)
         }.to change(subject.send(title_backend.association_name), :size).by(1)
@@ -178,54 +178,54 @@ describe "Mobility::Backends::ActiveRecord::Table", orm: :active_record do
     end
 
     describe "#write" do
-      context "no translation for locale exists" do
-        it "creates translation for locale" do
+      context "no price for currency exists" do
+        it "creates price for currency" do
           expect {
             title_backend.write(:en, "New Article")
           }.to change(subject.send(title_backend.association_name), :size).by(1)
 
-          expect { subject.save! }.to change(Article::Translation, :count).by(1)
+          expect { subject.save! }.to change(Article::Price, :count).by(1)
         end
 
-        it "assigns attributes to translation" do
+        it "assigns attributes to price" do
           title_backend.write(:en, "New Article")
           content_backend.write(:en, "Lorum ipsum...")
 
-          translation = subject.send(title_backend.association_name).first
+          price = subject.send(title_backend.association_name).first
 
           aggregate_failures do
-            expect(translation.title).to eq("New Article")
-            expect(translation.content).to eq("Lorum ipsum...")
-            expect(translation.translated_model).to eq(subject)
+            expect(price.title).to eq("New Article")
+            expect(price.content).to eq("Lorum ipsum...")
+            expect(price.translated_model).to eq(subject)
           end
         end
       end
 
-      context "translation for locale exists" do
+      context "price for currency exists" do
         before do
-          Article::Translation.create!(
+          Article::Price.create!(
             title: "foo",
-            locale: "en",
+            currency: "en",
             translated_model: subject
           )
         end
 
-        it "does not create new translation for locale" do
+        it "does not create new price for currency" do
           expect {
             title_backend.write(:en, "New Article")
           }.not_to change(subject.send(title_backend.association_name), :size)
         end
 
-        it "updates value attribute on existing translation" do
+        it "updates value attribute on existing price" do
           title_backend.write(:en, "New New Article")
           subject.save!
           subject.reload
 
-          translation = subject.send(title_backend.association_name).first
+          price = subject.send(title_backend.association_name).first
 
           aggregate_failures do
-            expect(translation.title).to eq("New New Article")
-            expect(translation.translated_model).to eq(subject)
+            expect(price.title).to eq("New New Article")
+            expect(price.translated_model).to eq(subject)
           end
         end
       end
@@ -236,17 +236,17 @@ describe "Mobility::Backends::ActiveRecord::Table", orm: :active_record do
     let(:options) { { model_class: Article } }
     it "sets association_name" do
       described_class.configure(options)
-      expect(options[:association_name]).to eq(:translations)
+      expect(options[:association_name]).to eq(:prices)
     end
 
     it "sets subclass_name" do
       described_class.configure(options)
-      expect(options[:subclass_name]).to eq(:Translation)
+      expect(options[:subclass_name]).to eq(:Price)
     end
 
     it "sets table_name" do
       described_class.configure(options)
-      expect(options[:table_name]).to eq(:article_translations)
+      expect(options[:table_name]).to eq(:article_prices)
     end
 
     it "sets foreign_key" do
@@ -278,7 +278,7 @@ describe "Mobility::Backends::ActiveRecord::Table", orm: :active_record do
 
       it "works with other joins" do
         article = Article.create(title: "foo")
-        expect(Article.i18n.joins(:translations).find_by(title: "foo")).to eq(article)
+        expect(Article.i18n.joins(:prices).find_by(title: "foo")).to eq(article)
       end
 
       describe "Arel queries" do
@@ -341,9 +341,9 @@ describe "Mobility::Backends::ActiveRecord::Table", orm: :active_record do
           expect(Article.i18n { subtitle.eq(nil).or(title.eq("foo")) }).to eq([article1])
         end
 
-        it "combines multiple locales to use correct join type" do
+        it "combines multiple currencies to use correct join type" do
           post1 = Article.new(title: "foo en", subtitle: "bar en")
-          Mobility.with_locale(:ja) do
+          Mobility.with_currency(:ja) do
             post1.title = "foo ja"
             post1.subtitle = "bar ja"
           end
@@ -351,8 +351,8 @@ describe "Mobility::Backends::ActiveRecord::Table", orm: :active_record do
 
           post2 = Article.create(title: "foo en")
 
-          Article.i18n(locale: :en) { |en|
-            Article.i18n(locale: :ja) { |ja|
+          Article.i18n(currency: :en) { |en|
+            Article.i18n(currency: :ja) { |ja|
               en.title.eq("foo en").and(ja.title.eq(nil))
             }
           }.tap do |relation|
@@ -376,27 +376,27 @@ describe "Mobility::Backends::ActiveRecord::Table", orm: :active_record do
   describe "Model.i18n.find_by_<translated attribute>" do
     before { Article.translates :title, backend: :table, cache: false }
 
-    it "finds correct translation if exists in current locale" do
-      Mobility.locale = :ja
+    it "finds correct price if exists in current currency" do
+      Mobility.currency = :ja
       article = Article.create(title: "タイトル")
       expect(Article.i18n.find_by_title("タイトル")).to eq(article)
       expect(Article.i18n.find_by_title("foo")).to be_nil
     end
 
-    it "returns nil if no matching translation exists in this locale" do
-      Mobility.locale = :ja
+    it "returns nil if no matching price exists in this currency" do
+      Mobility.currency = :ja
       article = Article.create(title: "タイトル")
-      Mobility.locale = :en
+      Mobility.currency = :en
       expect(Article.i18n.find_by_title("タイトル")).to eq(nil)
       expect(Article.i18n.find_by_title("foo")).to be_nil
     end
 
     it "works on a scope" do
-      Mobility.locale = :ja
+      Mobility.currency = :ja
       article1 = Article.create(title: "タイトル")
-      Mobility.locale = :en
+      Mobility.currency = :en
       article2 = Article.create(title: "title")
-      Mobility.with_locale(:ja) do
+      Mobility.with_currency(:ja) do
         expect(Article.i18n.all.find_by_title("タイトル")).to eq(article1)
       end
     end

@@ -41,14 +41,14 @@ describe "Mobility::Backends::Sequel::Serialized", orm: :sequel do
         it "does not cache reads" do
           post = SerializedPost.new
           backend = post.mobility_backends[:title]
-          expect(backend).to receive(:translations).twice.and_call_original
+          expect(backend).to receive(:prices).twice.and_call_original
           2.times { backend.read(:en) }
         end
 
         it "re-reads serialized attribute for every write" do
           post = SerializedPost.new
           backend = post.mobility_backends[:title]
-          expect(backend).to receive(:translations).twice.and_call_original
+          expect(backend).to receive(:prices).twice.and_call_original
           2.times { backend.write(:en, "foo") }
         end
       end
@@ -79,7 +79,7 @@ describe "Mobility::Backends::Sequel::Serialized", orm: :sequel do
       it "uses cache for reads" do
         post = SerializedPost.new
         backend = post.mobility_backends[:title]
-        expect(backend).to receive(:translations).once.and_call_original
+        expect(backend).to receive(:prices).once.and_call_original
         2.times { backend.read(:en) }
       end
     end
@@ -88,22 +88,22 @@ describe "Mobility::Backends::Sequel::Serialized", orm: :sequel do
       before { SerializedPost.translates :title, backend: :serialized, **default_options }
 
       def error_msg(*attributes)
-        "You cannot query on mobility attributes translated with the Serialized backend (#{attributes.join(", ")})."
+        "You cannot query on mobility attributes priced with the Serialized backend (#{attributes.join(", ")})."
       end
 
       describe ".where" do
-        it "raises error for queries on attributes translated with serialized backend" do
+        it "raises error for queries on attributes priced with serialized backend" do
           expect { SerializedPost.i18n.where(title: "foo") }.to raise_error(ArgumentError, error_msg("title"))
         end
 
-        it "does not raise error for queries on attributes translated with other backends" do
+        it "does not raise error for queries on attributes priced with other backends" do
           SerializedPost.translates :subtitle, backend: :key_value, type: :text
 
           post = SerializedPost.create(subtitle: "foo")
           expect(SerializedPost.i18n.where(subtitle: "foo").select_all(:serialized_posts).all).to eq([post])
         end
 
-        it "does not raise error for queries on untranslated attributes" do
+        it "does not raise error for queries on unpriced attributes" do
           post = SerializedPost.create(published: true)
           expect(SerializedPost.i18n.where(published: true).select_all(:serialized_posts).all).to eq([post])
         end

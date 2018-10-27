@@ -15,35 +15,35 @@ Implements the {Mobility::Backends::Column} backend for Sequel models.
 
       # @!group Backend Accessors
       # @!macro backend_reader
-      def read(locale, _options = nil)
-        column = column(locale)
+      def read(currency, _options = nil)
+        column = column(currency)
         model[column] if model.columns.include?(column)
       end
 
       # @!group Backend Accessors
       # @!macro backend_writer
-      def write(locale, value, _options = nil)
-        column = column(locale)
+      def write(currency, value, _options = nil)
+        column = column(currency)
         model[column] = value if model.columns.include?(column)
       end
 
       # @!macro backend_iterator
-      def each_locale
-        available_locales.each { |l| yield(l) if present?(l) }
+      def each_currency
+        available_currencies.each { |l| yield(l) if present?(l) }
       end
 
-      def self.build_op(attr, locale)
+      def self.build_op(attr, currency)
         ::Sequel::SQL::QualifiedIdentifier.new(model_class.table_name,
-                                               Column.column_name_for(attr, locale))
+                                               Column.column_name_for(attr, currency))
       end
 
       private
 
-      def available_locales
-        @available_locales ||= get_column_locales
+      def available_currencies
+        @available_currencies ||= get_column_currencies
       end
 
-      def get_column_locales
+      def get_column_currencies
         column_name_regex = /\A#{attribute}_([a-z]{2}(_[a-z]{2})?)\z/.freeze
         model.columns.map do |c|
           (match = c.to_s.match(column_name_regex)) && match[1].to_sym

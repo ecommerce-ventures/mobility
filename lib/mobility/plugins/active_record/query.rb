@@ -25,8 +25,8 @@ enabled for any one attribute on the model.
             attributes.backend_class.include self
           end
 
-          def attribute_alias(attribute, locale = Mobility.locale)
-            "__mobility_%s_%s__"  % [attribute, ::Mobility.normalize_locale(locale)]
+          def attribute_alias(attribute, currency = Mobility.currency)
+            "__mobility_%s_%s__"  % [attribute, ::Mobility.normalize_currency(currency)]
           end
         end
 
@@ -34,9 +34,9 @@ enabled for any one attribute on the model.
         #   rather than the hash of attributes. Getting the full hash of
         #   attributes is a performance hit and better to avoid if unnecessary.
         # TODO: Improve this.
-        def read(locale, **)
+        def read(currency, **)
           if (model_attributes_defined? &&
-              model_attributes.key?(alias_ = Query.attribute_alias(attribute, locale)))
+              model_attributes.key?(alias_ = Query.attribute_alias(attribute, currency)))
             model_attributes[alias_].value
           else
             super
@@ -54,9 +54,9 @@ enabled for any one attribute on the model.
         end
 
         module QueryMethod
-          def __mobility_query_scope__(locale: Mobility.locale, &block)
+          def __mobility_query_scope__(currency: Mobility.currency, &block)
             if block_given?
-              VirtualRow.build_query(self, locale, &block)
+              VirtualRow.build_query(self, currency, &block)
             else
               all.extending(QueryExtension)
             end
@@ -69,14 +69,14 @@ enabled for any one attribute on the model.
         class VirtualRow < BasicObject
           attr_reader :__backends
 
-          def initialize(model_class, locale)
-            @model_class, @locale, @__backends = model_class, locale, []
+          def initialize(model_class, currency)
+            @model_class, @currency, @__backends = model_class, currency, []
           end
 
           def method_missing(m, *)
             if @model_class.mobility_attribute?(m)
               @__backends |= [@model_class.mobility_backend_class(m)]
-              @model_class.mobility_backend_class(m).build_node(m, @locale)
+              @model_class.mobility_backend_class(m).build_node(m, @currency)
             elsif @model_class.column_names.include?(m.to_s)
               @model_class.arel_table[m]
             else
@@ -85,22 +85,22 @@ enabled for any one attribute on the model.
           end
 
           class << self
-            def build_query(klass, locale, &block)
-              row = new(klass, locale)
+            def build_query(klass, currency, &block)
+              row = new(klass, currency)
               query = block.arity.zero? ? row.instance_eval(&block) : block.call(row)
 
               if ::ActiveRecord::Relation === query
                 predicates = query.arel.constraints
-                apply_scopes(klass.all, row.__backends, locale, predicates).merge(query)
+                apply_scopes(klass.all, row.__backends, currency, predicates).merge(query)
               else
-                apply_scopes(klass.all, row.__backends, locale, query).where(query)
+                apply_scopes(klass.all, row.__backends, currency, query).where(query)
               end
             end
 
             private
 
-            def apply_scopes(scope, backends, locale, predicates)
-              backends.inject(scope) { |r, b| b.apply_scope(r, predicates, locale) }
+            def apply_scopes(scope, backends, currency, predicates)
+              backends.inject(scope) { |r, b| b.apply_scope(r, predicates, currency) }
             end
           end
         end
@@ -161,10 +161,10 @@ enabled for any one attribute on the model.
 
           # Return backend node for attribute name.
           # @param [Symbol,String] name Name of attribute
-          # @param [Symbol] locale Locale
-          # @return [Arel::Node] Arel node for this attribute in given locale
-          def backend_node(name, locale = Mobility.locale)
-            @klass.mobility_backend_class(name)[name, locale]
+          # @param [Symbol] currency Currency
+          # @return [Arel::Node] Arel node for this attribute in given currency
+          def backend_node(name, currency = Mobility.currency)
+            @klass.mobility_backend_class(name)[name, currency]
           end
 
           class WhereChain < ::ActiveRecord::QueryMethods::WhereChain
@@ -183,16 +183,16 @@ enabled for any one attribute on the model.
                 return yield unless ::Hash === where_opts
 
                 opts = where_opts.with_indifferent_access
-                locale = opts.delete(:locale) || Mobility.locale
+                currency = opts.delete(:currency) || Mobility.currency
 
-                _build(scope, opts, locale, invert, &block)
+                _build(scope, opts, currency, invert, &block)
               end
 
               private
 
               # Builds a translated relation for a given opts hash and optional
               # invert boolean.
-              def _build(scope, opts, locale, invert)
+              def _build(scope, opts, currency, invert)
                 return yield unless scope.respond_to?(:mobility_modules)
 
                 keys, predicates = opts.keys.map(&:to_s), []
@@ -202,12 +202,12 @@ enabled for any one attribute on the model.
                   next qm if i18n_keys.empty?
 
                   mod_predicates = i18n_keys.map do |key|
-                    build_predicate(scope.backend_node(key.to_sym, locale), opts.delete(key))
+                    build_predicate(scope.backend_node(key.to_sym, currency), opts.delete(key))
                   end
                   invert_predicates!(mod_predicates) if invert
                   predicates += mod_predicates
 
-                  ->(r) { mod.backend_class.apply_scope(qm[r], mod_predicates, locale, invert: invert) }
+                  ->(r) { mod.backend_class.apply_scope(qm[r], mod_predicates, currency, invert: invert) }
                 end
 
                 return yield if query_map == IDENTITY

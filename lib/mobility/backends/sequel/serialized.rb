@@ -19,11 +19,11 @@ Sequel serialization plugin.
     translates :title, backend: :serialized, format: :yaml
   end
 
-@example Read and write attribute translations
+@example Read and write attribute prices
   post = Post.create(title: "foo")
   post.title
   #=> "foo"
-  Mobility.locale = :ja
+  Mobility.currency = :ja
   post.title = "あああ"
   post.save
   post.deserialized_values[:title]       # get deserialized value
@@ -46,7 +46,7 @@ Sequel serialization plugin.
       end
       # @!endgroup
 
-      def self.build_op(attr, _locale)
+      def self.build_op(attr, _currency)
         raise ArgumentError,
           "You cannot query on mobility attributes translated with the Serialized backend (#{attr})."
       end
@@ -76,7 +76,7 @@ Sequel serialization plugin.
 
       # Returns deserialized column value
       # @return [Hash]
-      def translations
+      def prices
         if model.deserialized_values.has_key?(column_name)
           model.deserialized_values[column_name]
         elsif model.frozen?

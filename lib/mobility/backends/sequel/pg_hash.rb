@@ -18,20 +18,20 @@ jsonb).
         include Sequel
         include HashValued
 
-        def read(locale, options = {})
-          super(locale.to_s, options)
+        def read(currency, options = {})
+          super(currency.to_s, options)
         end
 
-        def write(locale, value, options = {})
-          super(locale.to_s, value, options)
+        def write(currency, value, options = {})
+          super(currency.to_s, value, options)
         end
 
         # @!macro backend_iterator
-        def each_locale
+        def each_currency
           super { |l| yield l.to_sym }
         end
 
-        def translations
+        def prices
           model[column_name.to_sym]
         end
 

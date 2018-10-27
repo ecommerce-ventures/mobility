@@ -67,141 +67,141 @@ describe Mobility do
     end
   end
 
-  describe '.with_locale' do
-    def perform_with_locale(locale)
+  describe '.with_currency' do
+    def perform_with_currency(currency)
       Thread.new do
-        described_class.with_locale(locale) do
+        described_class.with_currency(currency) do
           Thread.pass
-          expect(locale).to eq(described_class.locale)
+          expect(currency).to eq(described_class.currency)
         end
       end
     end
 
-    it 'sets locale in a single thread' do
-      perform_with_locale(:en).join
+    it 'sets currency in a single thread' do
+      perform_with_currency(:en).join
     end
 
-    it 'sets independent locales in multiple threads' do
+    it 'sets independent currencies in multiple threads' do
       threads = []
-      threads << perform_with_locale(:en)
-      threads << perform_with_locale(:fr)
-      threads << perform_with_locale(:de)
-      threads << perform_with_locale(:cz)
-      threads << perform_with_locale(:pl)
+      threads << perform_with_currency(:en)
+      threads << perform_with_currency(:fr)
+      threads << perform_with_currency(:de)
+      threads << perform_with_currency(:cz)
+      threads << perform_with_currency(:pl)
 
       threads.each(&:join)
     end
 
     it "returns result" do
-      expect(described_class.with_locale(:ja) { |locale| "returned-#{locale}" }).to eq("returned-ja")
+      expect(described_class.with_currency(:ja) { |currency| "returned-#{currency}" }).to eq("returned-ja")
     end
 
     context "something blows up" do
-      it "sets locale back" do
-        described_class.with_locale(:ja) { raise StandardError } rescue StandardError
-        expect(described_class.locale).to eq(:en)
+      it "sets currency back" do
+        described_class.with_currency(:ja) { raise StandardError } rescue StandardError
+        expect(described_class.currency).to eq(:en)
       end
     end
   end
 
-  describe ".locale" do
-    it "returns locale if set" do
-      described_class.locale = :de
-      expect(described_class.locale).to eq(:de)
+  describe ".currency" do
+    it "returns currency if set" do
+      described_class.currency = :de
+      expect(described_class.currency).to eq(:de)
     end
 
-    it "returns I18n.locale otherwise" do
-      described_class.locale = nil
-      I18n.locale = :de
-      expect(described_class.locale).to eq(:de)
+    it "returns I18n.currency otherwise" do
+      described_class.currency = nil
+      I18n.currency = :de
+      expect(described_class.currency).to eq(:de)
     end
   end
 
-  describe '.locale=' do
-    it "sets locale for locale in I18n.available_locales" do
-      described_class.locale = :fr
-      expect(described_class.locale).to eq(:fr)
+  describe '.currency=' do
+    it "sets currency for currency in I18n.available_currencies" do
+      described_class.currency = :fr
+      expect(described_class.currency).to eq(:fr)
     end
 
     it "converts string to symbol" do
-      described_class.locale = "fr"
-      expect(described_class.locale).to eq(:fr)
+      described_class.currency = "fr"
+      expect(described_class.currency).to eq(:fr)
     end
 
-    it "raises Mobility::InvalidLocale for locale not in I18n.available_locales" do
+    it "raises Mobility::InvalidCurrency for currency not in I18n.available_currencies" do
       expect {
-        described_class.locale = :es
-      }.to raise_error(described_class::InvalidLocale)
+        described_class.currency = :es
+      }.to raise_error(described_class::InvalidCurrency)
     end
 
-    context "I18n.enforce_available_locales = false" do
+    context "I18n.enforce_available_currencies = false" do
       around do |example|
-        I18n.enforce_available_locales = false
+        I18n.enforce_available_currencies = false
         example.run
-        I18n.enforce_available_locales = true
+        I18n.enforce_available_currencies = true
       end
 
-      it "does not raise Mobility::InvalidLocale for locale not in I18n.available_locales" do
+      it "does not raise Mobility::InvalidCurrency for currency not in I18n.available_currencies" do
         expect {
-          described_class.locale = :es
+          described_class.currency = :es
         }.not_to raise_error
       end
     end
   end
 
-  describe ".available_locales" do
+  describe ".available_currencies" do
     around do |example|
-      @available_locales = I18n.available_locales
-      I18n.available_locales = [:en, :pt]
+      @available_currencies = I18n.available_currencies
+      I18n.available_currencies = [:en, :pt]
       example.run
-      I18n.available_locales = @available_locales
+      I18n.available_currencies = @available_currencies
     end
 
-    it "defaults to I18n.available_locales" do
-      expect(described_class.available_locales).to eq([:en, :pt])
+    it "defaults to I18n.available_currencies" do
+      expect(described_class.available_currencies).to eq([:en, :pt])
     end
 
     # @note Required since model may be loaded in initializer before Rails has
-    #   updated I18n.available_locales.
-    it "uses Rails i18n locales if Rails application is loaded" do
-      allow(Rails).to receive_message_chain(:application, :config, :i18n, :available_locales).
+    #   updated I18n.available_currencies.
+    it "uses Rails i18n currencies if Rails application is loaded" do
+      allow(Rails).to receive_message_chain(:application, :config, :i18n, :available_currencies).
         and_return([:ru, :cn])
-      expect(described_class.available_locales).to eq([:ru, :cn])
+      expect(described_class.available_currencies).to eq([:ru, :cn])
     end if Mobility::Loaded::Rails
   end
 
-  describe '.normalize_locale' do
-    it "normalizes locale to lowercase string underscores" do
-      expect(described_class.normalize_locale(:"pt-BR")).to eq("pt_br")
+  describe '.normalize_currency' do
+    it "normalizes currency to lowercase string underscores" do
+      expect(described_class.normalize_currency(:"pt-BR")).to eq("pt_br")
     end
 
-    it "normalizes current locale if passed no argument" do
-      described_class.with_locale(:"pt-BR") do
+    it "normalizes current currency if passed no argument" do
+      described_class.with_currency(:"pt-BR") do
         aggregate_failures do
-          expect(described_class.normalize_locale).to eq("pt_br")
-          expect(described_class.normalized_locale).to eq("pt_br")
+          expect(described_class.normalize_currency).to eq("pt_br")
+          expect(described_class.normalized_currency).to eq("pt_br")
         end
       end
     end
 
-    it "normalizes locales with multiple dashes" do
-      expect(described_class.normalize_locale(:"foo-bar-baz")).to eq("foo_bar_baz")
+    it "normalizes currencies with multiple dashes" do
+      expect(described_class.normalize_currency(:"foo-bar-baz")).to eq("foo_bar_baz")
     end
   end
 
-  describe '.normalize_locale_accessor' do
-    it "normalizes accessor to use lowercase locale with underscores" do
-      expect(described_class.normalize_locale_accessor(:foo, :"pt-BR")).to eq("foo_pt_br")
+  describe '.normalize_currency_accessor' do
+    it "normalizes accessor to use lowercase currency with underscores" do
+      expect(described_class.normalize_currency_accessor(:foo, :"pt-BR")).to eq("foo_pt_br")
     end
 
-    it "defaults locale to Mobility.locale" do
-      described_class.with_locale(:fr) do
-        expect(described_class.normalize_locale_accessor(:foo)).to eq("foo_fr")
+    it "defaults currency to Mobility.currency" do
+      described_class.with_currency(:fr) do
+        expect(described_class.normalize_currency_accessor(:foo)).to eq("foo_fr")
       end
     end
 
-    it "raises ArgumentError for invalid attribute or locale" do
-      expect { described_class.normalize_locale_accessor(:"a-*-b") }.
+    it "raises ArgumentError for invalid attribute or currency" do
+      expect { described_class.normalize_currency_accessor(:"a-*-b") }.
         to raise_error(ArgumentError, "\"a-*-b_en\" is not a valid accessor")
     end
   end
@@ -225,7 +225,7 @@ describe Mobility do
   end
 
   # TODO: remove default_fallbacks in v1.0
-  %w[accessor_method query_method default_fallbacks new_fallbacks default_accessor_locales].each do |delegated_method|
+  %w[accessor_method query_method default_fallbacks new_fallbacks default_accessor_currencies].each do |delegated_method|
     describe ".#{delegated_method}" do
       it "delegates to config" do
         expect(described_class.config).to receive(delegated_method).and_return("foo")

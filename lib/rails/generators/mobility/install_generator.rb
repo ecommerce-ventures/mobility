@@ -8,19 +8,19 @@ module Mobility
     include ::Rails::Generators::Migration
     include ::Mobility::ActiveRecordMigrationCompatibility
 
-    desc "Generates migrations to add translations tables."
+    desc "Generates migrations to add prices tables."
 
     source_root File.expand_path("../templates", __FILE__)
     class_option(
       :without_tables,
       type: :boolean,
       default: false,
-      desc: "Skip creating translations tables."
+      desc: "Skip creating prices tables."
     )
 
     def create_migration_file
-      add_mobility_migration("create_text_translations")   unless options.without_tables?
-      add_mobility_migration("create_string_translations") unless options.without_tables?
+      add_mobility_migration("create_integer_prices") unless options.without_tables?
+      add_mobility_migration("create_float_prices")   unless options.without_tables?
     end
 
     def create_initializer

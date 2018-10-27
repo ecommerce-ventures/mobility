@@ -8,23 +8,23 @@ module Mobility
 
       module ClassMethods
         # @param [Symbol] name Attribute name
-        # @param [Symbol] locale Locale
-        def [](name, locale)
-          build_op(name.to_s, locale)
+        # @param [Symbol] currency Currency
+        def [](name, currency)
+          build_op(name.to_s, currency)
         end
 
         # @param [String] _attr Attribute name
-        # @param [Symbol] _locale Locale
+        # @param [Symbol] _currency Currency
         # @return Op for this translated attribute
-        def build_op(_attr, _locale)
+        def build_op(_attr, _currency)
           raise NotImplementedError
         end
 
         # @param [Sequel::Dataset] dataset Dataset to prepare
         # @param [Object] predicate Predicate
-        # @param [Symbol] locale Locale
+        # @param [Symbol] currency Currency
         # @return [Sequel::Dataset] Prepared dataset
-        def prepare_dataset(dataset, _predicate, _locale)
+        def prepare_dataset(dataset, _predicate, _currency)
           dataset
         end
       end

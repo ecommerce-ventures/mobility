@@ -18,7 +18,7 @@ understanding and designing backends.
 Since {Attributes} is a subclass of +Module+, including an instance of it is
 like including a module. Creating an instance like this:
 
-  Attributes.new("title", backend: :my_backend, locale_accessors: [:en, :ja], cache: true, fallbacks: true)
+  Attributes.new("title", backend: :my_backend, currency_accessors: [:en, :ja], cache: true)
 
 will generate an anonymous module that behaves approximately like this:
 
@@ -35,52 +35,51 @@ will generate an anonymous module that behaves approximately like this:
       # +Mobility::Backends::MyBackend+ and includes into it:
       #
       # - Mobility::Plugins::Cache (from the +cache: true+ option)
-      # - instance of Mobility::Plugins::Fallbacks (from the +fallbacks: true+ option)
       # - Mobility::Plugins::Presence (by default, disabled by +presence: false+)
     end
 
-    def title(locale: Mobility.locale)
-      mobility_backends[:title].read(locale)
+    def title(currency: Mobility.currency)
+      mobility_backends[:title].read(currency)
     end
 
-    def title?(locale: Mobility.locale)
-      mobility_backends[:title].read(locale).present?
+    def title?(currency: Mobility.currency)
+      mobility_backends[:title].read(currency).present?
     end
 
-    def title=(value, locale: Mobility.locale)
-      mobility_backends[:title].write(locale, value)
+    def title=(value, currency: Mobility.currency)
+      mobility_backends[:title].write(currency, value)
     end
 
-    # Start Locale Accessors
+    # Start Currency Accessors
     #
     def title_en
-      title(locale: :en)
+      title(currency: :en)
     end
 
     def title_en?
-      title?(locale: :en)
+      title?(currency: :en)
     end
 
     def title_en=(value)
-      public_send(:title=, value, locale: :en)
+      public_send(:title=, value, currency: :en)
     end
 
     def title_ja
-      title(locale: :ja)
+      title(currency: :ja)
     end
 
     def title_ja?
-      title?(locale: :ja)
+      title?(currency: :ja)
     end
 
     def title_ja=(value)
-      public_send(:title=, value, locale: :ja)
+      public_send(:title=, value, currency: :ja)
     end
-    # End Locale Accessors
+    # End Currency Accessors
   end
 
 Including this module into a model class will thus add the backend method, the
-reader, writer and presence methods, and the locale accessor so the model
+reader, writer and presence methods, and the currency accessor so the model
 class. (These methods are in fact added to the model in an +included+ hook.)
 
 Note that some simplifications have been made above for readability. (In
@@ -200,14 +199,14 @@ with other backends.
       class_eval <<-EOM, __FILE__, __LINE__ + 1
         def #{attribute}(**options)
           return super() if options.delete(:super)
-          #{set_locale_from_options_inline}
-          mobility_backends[:#{attribute}].read(locale, options)
+          #{set_currency_from_options_inline}
+          mobility_backends[:#{attribute}].read(currency, options)
         end
 
         def #{attribute}?(**options)
           return super() if options.delete(:super)
-          #{set_locale_from_options_inline}
-          mobility_backends[:#{attribute}].present?(locale, options)
+          #{set_currency_from_options_inline}
+          mobility_backends[:#{attribute}].present?(currency, options)
         end
       EOM
     end
@@ -216,22 +215,21 @@ with other backends.
       class_eval <<-EOM, __FILE__, __LINE__ + 1
         def #{attribute}=(value, **options)
           return super(value) if options.delete(:super)
-          #{set_locale_from_options_inline}
-          mobility_backends[:#{attribute}].write(locale, value, options)
+          #{set_currency_from_options_inline}
+          mobility_backends[:#{attribute}].write(currency, value, options)
         end
       EOM
     end
 
     # This string is evaluated inline in order to optimize performance of
     # getters and setters, avoiding extra steps where they are unneeded.
-    def set_locale_from_options_inline
+    def set_currency_from_options_inline
       <<-EOL
-if options[:locale]
-  #{"Mobility.enforce_available_locales!(options[:locale])" if I18n.enforce_available_locales}
-  locale = options[:locale].to_sym
-  options[:locale] &&= !!locale
+if options[:currency]
+  currency = options[:currency].to_sym
+  options[:currency] &&= !!currency
 else
-  locale = Mobility.locale
+  currency = Mobility.currency
 end
 EOL
     end

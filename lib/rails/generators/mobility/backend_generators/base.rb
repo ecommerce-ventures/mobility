@@ -30,7 +30,7 @@ module Mobility
         attributes.select { |a| !a.reference? && a.has_index? }
       end
 
-      def translation_index_name(column, *columns)
+      def price_index_name(column, *columns)
         truncate_index_name("index_#{table_name}_on_#{[column, *columns].join('_and_')}")
       end
 
@@ -38,7 +38,7 @@ module Mobility
 
       def check_data_source!
         unless data_source_exists?
-          raise NoTableDefined, "The table #{table_name} does not exist. Create it first before generating translated columns."
+          raise NoTableDefined, "The table #{table_name} does not exist. Create it first before generating priced columns."
         end
       end
 
@@ -57,7 +57,7 @@ module Mobility
       end
 
       def template
-        "#{backend}_translations"
+        "#{backend}_prices"
       end
 
       def migration_dir
@@ -65,7 +65,7 @@ module Mobility
       end
 
       def migration_file
-        "create_#{file_name}_#{attributes.map(&:name).join('_and_')}_translations_for_mobility_#{backend}_backend"
+        "create_#{file_name}_#{attributes.map(&:name).join('_and_')}_prices_for_mobility_#{backend}_backend"
       end
     end
 

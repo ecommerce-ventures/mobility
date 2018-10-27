@@ -5,10 +5,10 @@ class <%= migration_class_name %> < <%= activerecord_migration_class %>
     add_reference :<%= table_name %>, :<%= attribute.name %><%= attribute.inject_options %>
   <%- elsif attribute.respond_to?(:token?) && attribute.token? -%>
     add_column :<%= table_name %>, :<%= attribute.name %>, :string<%= attribute.inject_options %>
-    add_index :<%= table_name %>, [:<%= attribute.index_name %><%= attribute.inject_index_options %>, :locale], name: :<%= translation_index_name(attribute.index_name, "locale") %>, unique: true <%- else -%>
+    add_index :<%= table_name %>, [:<%= attribute.index_name %><%= attribute.inject_index_options %>, :currency], name: :<%= price_index_name(attribute.index_name, "currency") %>, unique: true <%- else -%>
     add_column :<%= table_name %>, :<%= attribute.name %>, :<%= attribute.type %><%= attribute.inject_options %>
     <%- if attribute.has_index? -%>
-    add_index :<%= table_name %>, [:<%= attribute.index_name %><%= attribute.inject_index_options %>, :locale], name: :<%= translation_index_name(attribute.index_name, "locale") %>
+    add_index :<%= table_name %>, [:<%= attribute.index_name %><%= attribute.inject_index_options %>, :currency], name: :<%= price_index_name(attribute.index_name, "currency") %>
     <%- end -%>
   <%- end -%>
 <% end -%>

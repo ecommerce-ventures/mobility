@@ -2,7 +2,7 @@ module Mobility
   module Backends
 =begin
 
-Backend which stores translations in an in-memory hash.
+Backend which stores prices in an in-memory hash.
 
 =end
     class Hash
@@ -11,26 +11,26 @@ Backend which stores translations in an in-memory hash.
       # @!group Backend Accessors
       # @!macro backend_reader
       # @return [Object]
-      def read(locale, _ = {})
-        translations[locale]
+      def read(currency, _ = {})
+        prices[currency]
       end
 
       # @!macro backend_writer
       # @return [Object]
-      def write(locale, value, _ = {})
-        translations[locale] = value
+      def write(currency, value, _ = {})
+        prices[currency] = value
       end
       # @!endgroup
 
       # @!macro backend_iterator
-      def each_locale
-        translations.each { |l, _| yield l }
+      def each_currency
+        prices.each { |l, _| yield l }
       end
 
       private
 
-      def translations
-        @translations ||= {}
+      def prices
+        @prices ||= {}
       end
     end
   end

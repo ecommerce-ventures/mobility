@@ -41,7 +41,7 @@ describe "Mobility::Backends::Sequel::Container", orm: :sequel, db: :postgres do
         backend = post.mobility_backends[:title]
         backend.write(:en, { foo: :bar } )
         post.save
-        expect(post[:translations]).to eq({ "en" => { "title" => { "foo" => "bar" }}})
+        expect(post[:prices]).to eq({ "en" => { "title" => { "foo" => "bar" }}})
       end
 
       shared_examples_for "jsonb translated value" do |name, value|
@@ -74,13 +74,13 @@ describe "Mobility::Backends::Sequel::Container", orm: :sequel, db: :postgres do
 
   context "with a json column_name" do
     before(:all) do
-      DB.create_table!(:json_container_posts) { primary_key :id; json :json_translations, default: '{}'; TrueClass :published }
+      DB.create_table!(:json_container_posts) { primary_key :id; json :json_prices, default: '{}'; TrueClass :published }
     end
     before(:each) do
       stub_const 'JsonContainerPost', Class.new(Sequel::Model)
       JsonContainerPost.dataset = DB[:json_container_posts]
       JsonContainerPost.extend Mobility
-      JsonContainerPost.translates :title, :content, backend: :container, presence: false, cache: false, column_name: :json_translations
+      JsonContainerPost.translates :title, :content, backend: :container, presence: false, cache: false, column_name: :json_prices
     end
     after(:all) { DB.drop_table?(:json_container_posts) }
 

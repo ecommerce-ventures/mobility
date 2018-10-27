@@ -43,7 +43,7 @@ describe "Mobility::Backends::ActiveRecord::Container", orm: :active_record, db:
         backend = post.mobility_backends[:title]
         backend.write(:en, { foo: :bar } )
         post.save
-        expect(post[:translations]).to eq({ "en" => { "title" => { "foo" => "bar" }}})
+        expect(post[:prices]).to eq({ "en" => { "title" => { "foo" => "bar" }}})
       end
 
       shared_examples_for "container translated value" do |name, value|
@@ -86,7 +86,7 @@ describe "Mobility::Backends::ActiveRecord::Container", orm: :active_record, db:
       m = ActiveRecord::Migration.new
       m.verbose = false
       m.create_table :json_container_posts do |t|
-        t.json :json_translations, default: {}, null: false
+        t.json :json_prices, default: {}, null: false
         t.boolean :published
         t.timestamps null: false
       end
@@ -94,7 +94,7 @@ describe "Mobility::Backends::ActiveRecord::Container", orm: :active_record, db:
     before(:each) do
       stub_const 'JsonContainerPost', Class.new(ActiveRecord::Base)
       JsonContainerPost.extend Mobility
-      JsonContainerPost.translates :title, :content, backend: :container, presence: false, cache: false, column_name: :json_translations
+      JsonContainerPost.translates :title, :content, backend: :container, presence: false, cache: false, column_name: :json_prices
     end
     after(:all) do
       m = ActiveRecord::Migration.new

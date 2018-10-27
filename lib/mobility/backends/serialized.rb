@@ -5,7 +5,7 @@ module Mobility
   module Backends
 =begin
 
-Stores translations as serialized attributes in a single text column. This
+Stores prices as serialized attributes in a single text column. This
 implies that the translated values are not searchable, and thus this backend is
 not recommended unless specific constraints prevent use of other solutions.
 
@@ -41,9 +41,9 @@ Format for serialization. Either +:yaml+ (default) or +:json+.
           lambda do |obj|
             return if obj.nil?
             if obj.is_a? ::Hash
-              obj = obj.inject({}) do |translations, (locale, value)|
-                translations[locale] = value.to_s if Util.present?(value)
-                translations
+              obj = obj.inject({}) do |prices, (currency, value)|
+                prices[currency] = value.to_s if Util.present?(value)
+                prices
               end
             else
               raise ArgumentError, "Attribute is supposed to be a Hash, but was a #{obj.class}. -- #{obj.inspect}"

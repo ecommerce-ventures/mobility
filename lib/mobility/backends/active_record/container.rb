@@ -13,8 +13,8 @@ Implements the {Mobility::Backends::Container} backend for ActiveRecord models.
       include ActiveRecord
 
       # @!method column_name
-      #   Returns name of json or jsonb column used to store translations
-      #   @return [Symbol] (:translations) Name of translations column
+      #   Returns name of json or jsonb column used to store prices
+      #   @return [Symbol] (:prices) Name of prices column
       option_reader :column_name
 
       # @!method column_type
@@ -23,32 +23,32 @@ Implements the {Mobility::Backends::Container} backend for ActiveRecord models.
 
       # @!group Backend Accessors
       #
-      # @note Translation may be a string, integer, boolean, hash or array
+      # @note Price may be a string, integer, boolean, hash or array
       #   since value is stored on a JSON hash.
-      # @param [Symbol] locale Locale to read
+      # @param [Symbol] currency Currency to read
       # @param [Hash] options
-      # @return [String,Integer,Boolean] Value of translation
-      def read(locale, _ = nil)
-        model_translations(locale)[attribute]
+      # @return [String,Integer,Boolean] Value of price
+      def read(currency, _ = nil)
+        model_prices(currency)[attribute]
       end
 
-      # @note Translation may be a string, integer, boolean, hash or array
+      # @note Price may be a string, integer, boolean, hash or array
       #   since value is stored on a JSON hash.
-      # @param [Symbol] locale Locale to write
+      # @param [Symbol] currency Currency to write
       # @param [String,Integer,Boolean] value Value to write
       # @param [Hash] options
       # @return [String,Integer,Boolean] Updated value
-      def write(locale, value, _ = nil)
-        set_attribute_translation(locale, value)
-        model_translations(locale)[attribute]
+      def write(currency, value, _ = nil)
+        set_attribute_price(currency, value)
+        model_prices(currency)[attribute]
       end
       # @!endgroup
 
       # @!group Backend Configuration
-      # @option options [Symbol] column_name (:translations) Name of column on which to store translations
+      # @option options [Symbol] column_name (:prices) Name of column on which to store prices
       # @raise [InvalidColumnType] if the type of the container column is not json or jsonb
       def self.configure(options)
-        options[:column_name] ||= :translations
+        options[:column_name] ||= :prices
         options[:column_name] = options[:column_name].to_sym
         options[:column_type] = options[:model_class].type_for_attribute(options[:column_name].to_s).try(:type)
         unless %i[json jsonb].include?(options[:column_type])
@@ -58,21 +58,21 @@ Implements the {Mobility::Backends::Container} backend for ActiveRecord models.
       # @!endgroup
 
       # @param [String] attr Attribute name
-      # @param [Symbol] locale Locale
+      # @param [Symbol] currency Currency
       # @return [Mobility::Arel::Nodes::Json,Mobility::Arel::Nodes::Jsonb] Arel
       #   node for attribute on json or jsonb column
-      def self.build_node(attr, locale)
+      def self.build_node(attr, currency)
         column = model_class.arel_table[column_name]
         case column_type
         when :json
-          Arel::Nodes::JsonContainer.new(column, build_quoted(locale), build_quoted(attr))
+          Arel::Nodes::JsonContainer.new(column, build_quoted(currency), build_quoted(attr))
         when :jsonb
-          Arel::Nodes::JsonbContainer.new(column, build_quoted(locale), build_quoted(attr))
+          Arel::Nodes::JsonbContainer.new(column, build_quoted(currency), build_quoted(attr))
         end
       end
 
       # @!macro backend_iterator
-      def each_locale
+      def each_currency
         model[column_name].each do |l, v|
           yield l.to_sym if v.present?
         end
@@ -101,25 +101,25 @@ Implements the {Mobility::Backends::Container} backend for ActiveRecord models.
 
       private
 
-      def model_translations(locale)
-        model[column_name][locale] ||= {}
+      def model_prices(currency)
+        model[column_name][currency] ||= {}
       end
 
-      def set_attribute_translation(locale, value)
-        translations = model[column_name] || {}
-        translations[locale.to_s] ||= {}
-        translations[locale.to_s][attribute] = value
-        model[column_name] = translations
+      def set_attribute_price(currency, value)
+        prices = model[column_name] || {}
+        prices[currency.to_s] ||= {}
+        prices[currency.to_s][attribute] = value
+        model[column_name] = prices
       end
 
       class Coder
         def self.dump(obj)
           if obj.is_a? ::Hash
-            obj.inject({}) do |translations, (locale, value)|
+            obj.inject({}) do |prices, (currency, value)|
               value.each do |k, v|
-                (translations[locale] ||= {})[k] = v if v.present?
+                (prices[currency] ||= {})[k] = v if v.present?
               end
-              translations
+              prices
             end
           else
             raise ArgumentError, "Attribute is supposed to be a Hash, but was a #{obj.class}. -- #{obj.inspect}"

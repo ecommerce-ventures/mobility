@@ -11,12 +11,12 @@ describe Mobility::Backend do
       backend_double_ = backend_double
       backend = stub_const 'MyBackend', Class.new
       backend.class_eval do
-        define_method :read do |locale, options = {}|
-          backend_double_.read(locale, options)
+        define_method :read do |currency, options = {}|
+          backend_double_.read(currency, options)
         end
 
-        define_method :write do |locale, value, options = {}|
-          backend_double_.read(locale, options)
+        define_method :write do |currency, value, options = {}|
+          backend_double_.read(currency, options)
         end
       end
       backend.include described_class
@@ -31,12 +31,12 @@ describe Mobility::Backend do
     end
 
     describe "#present?" do
-      it "returns true if backend.read(locale) return non-blank value" do
+      it "returns true if backend.read(currency) return non-blank value" do
         expect(backend_double).to receive(:read).with(:en, {}).and_return("foo")
         expect(backend.present?(:en)).to eq(true)
       end
 
-      it "returns false if backend.read(locale) returns blank value" do
+      it "returns false if backend.read(currency) returns blank value" do
         expect(backend_double).to receive(:read).with(:en, {}).and_return("")
         expect(backend.present?(:en)).to eq(false)
       end
@@ -48,53 +48,53 @@ describe Mobility::Backend do
         expect(backend.each).to eq(nil)
       end
 
-      it "yields translations to each_locale if method is defined" do
+      it "yields prices to each_currency if method is defined" do
         backend_class.class_eval do
-          def each_locale
+          def each_currency
             yield :ja
             yield :en
           end
         end
         backend = backend_class.new(model, attribute)
 
-        translations = backend.inject([]) do |translations, translation|
-          translations << translation
-          translations
+        prices = backend.inject([]) do |prices, price|
+          prices << price
+          prices
         end
 
-        aggregate_failures "translation locales" do
-          expect(translations.first.locale).to eq(:ja)
-          expect(translations.last.locale).to eq(:en)
+        aggregate_failures "price currencies" do
+          expect(prices.first.currency).to eq(:ja)
+          expect(prices.last.currency).to eq(:en)
         end
 
         options = double("options")
 
-        aggregate_failures "translation reads" do
+        aggregate_failures "price reads" do
           expect(backend).to receive(:read).with(:ja, options).and_return("ja val")
-          expect(translations.first.read(options)).to eq("ja val")
+          expect(prices.first.read(options)).to eq("ja val")
           expect(backend).to receive(:read).with(:en, options).and_return("en val")
-          expect(translations.last.read(options)).to eq("en val")
+          expect(prices.last.read(options)).to eq("en val")
         end
 
-        aggregate_failures "translation writes" do
+        aggregate_failures "price writes" do
           expect(backend).to receive(:write).with(:ja, "ja val", options)
-          expect(translations.first.write("ja val", options))
+          expect(prices.first.write("ja val", options))
           expect(backend).to receive(:write).with(:en, "en val", options)
-          expect(translations.last.write("en val", options))
+          expect(prices.last.write("en val", options))
         end
       end
     end
 
-    describe "#locales" do
-      it "maps locales to array" do
+    describe "#currencies" do
+      it "maps currencies to array" do
         backend_class.class_eval do
-          def each_locale
+          def each_currency
             yield :ja
             yield :en
           end
         end
         backend = backend_class.new(model, attribute)
-        expect(backend.locales).to eq([:ja, :en])
+        expect(backend.currencies).to eq([:ja, :en])
       end
     end
 
@@ -186,7 +186,7 @@ describe Mobility::Backend do
   end
 
   describe ".method_name" do
-    it "returns <attribute>_translations" do
+    it "returns <attribute>_prices" do
       expect(Mobility::Backend.method_name("foo")).to eq("foo_backend")
     end
   end

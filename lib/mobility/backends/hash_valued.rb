@@ -4,7 +4,7 @@ module Mobility
 =begin
 
 Defines read and write methods that access the value at a key with value
-+locale+ on a +translations+ hash.
++currency+ on a +prices+ hash.
 
 =end
     module HashValued
@@ -15,19 +15,19 @@ Defines read and write methods that access the value at a key with value
       # @!group Backend Accessors
       #
       # @!macro backend_reader
-      def read(locale, _options = nil)
-        translations[locale]
+      def read(currency, _options = nil)
+        prices[currency]
       end
 
       # @!macro backend_writer
-      def write(locale, value, _options = nil)
-        translations[locale] = value
+      def write(currency, value, _options = nil)
+        prices[currency] = value
       end
       # @!endgroup
 
       # @!macro backend_iterator
-      def each_locale
-        translations.each { |l, _| yield l }
+      def each_currency
+        prices.each { |l, _| yield l }
       end
 
       def self.included(backend_class)

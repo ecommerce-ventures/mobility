@@ -16,13 +16,13 @@ Automatically includes dirty plugin in model class when enabled.
         # @!group Backend Accessors
         # @!macro backend_writer
         # @param [Hash] options
-        def write(locale, value, options = {})
-          locale_accessor = Mobility.normalize_locale_accessor(attribute, locale).to_sym
-          if model.column_changes.has_key?(locale_accessor) && model.initial_values[locale_accessor] == value
+        def write(currency, value, options = {})
+          currency_accessor = Mobility.normalize_currency_accessor(attribute, currency).to_sym
+          if model.column_changes.has_key?(currency_accessor) && model.initial_values[currency_accessor] == value
             super
-            [model.changed_columns, model.initial_values].each { |h| h.delete(locale_accessor) }
-          elsif read(locale, options.merge(fallback: false)) != value
-            model.will_change_column(locale_accessor)
+            [model.changed_columns, model.initial_values].each { |h| h.delete(currency_accessor) }
+          elsif read(currency, options.merge(fallback: false)) != value
+            model.will_change_column(currency_accessor)
             super
           end
         end
@@ -40,7 +40,7 @@ Automatically includes dirty plugin in model class when enabled.
             %w[initial_value column_change column_changed? reset_column].each do |method_name|
               define_method method_name do |column|
                 if attribute_names.map(&:to_sym).include?(column)
-                  super(Mobility.normalize_locale_accessor(column).to_sym)
+                  super(Mobility.normalize_currency_accessor(column).to_sym)
                 else
                   super(column)
                 end

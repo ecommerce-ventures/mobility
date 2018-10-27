@@ -23,6 +23,10 @@ Stores shared Mobility configuration referenced by all backends.
     # @return [Hash]
     attr_reader :default_options
 
+    # Default currency.
+    # @return [Symbol]
+    attr_reader :default_currency
+
     # @deprecated The default_options= setter has been deprecated. Set each
     #   option on the default_options hash instead.
     def default_options=(options)
@@ -30,7 +34,6 @@ Stores shared Mobility configuration referenced by all backends.
 WARNING: The default_options= setter has been deprecated.
 Set each option on the default_options hash instead, like this:
 
-  config.default_options[:fallbacks] = { ... }
   config.default_options[:dirty] = true
 }
       if (keys = options.keys & RESERVED_OPTION_KEYS).present?
@@ -47,64 +50,27 @@ Set each option on the default_options hash instead, like this:
     # @return [Array<Symbol>]
     attr_accessor :plugins
 
-    # Generate new fallbacks instance
-    # @note This method will call the proc defined in the variable set by the
-    # +fallbacks_generator=+ setter, passing the first argument to its `call`
-    # method. By default the generator returns an instance of
-    # +I18n::Locale::Fallbacks+.
-    # @param fallbacks [Hash] Fallbacks hash passed to generator
-    # @return [I18n::Locale::Fallbacks]
-    def new_fallbacks(fallbacks = {})
-      @fallbacks_generator.call(fallbacks)
-    end
-
-    # Assign proc which, passed a set of fallbacks, returns a default fallbacks
-    # instance. By default this is a proc which takes fallbacks and returns an
-    # instance of +I18n::Locale::Fallbacks+.
-    # @param [Proc] fallbacks generator
-    attr_writer :fallbacks_generator
-
-    # @deprecated Use {#new_fallbacks} instead.
-    def default_fallbacks(fallbacks = {})
-      warn %{
-WARNING: The default_fallbacks configuration getter has been renamed
-new_fallbacks to avoid confusion. The original method default_fallbacks will be
-removed in the next major version of Mobility.
-}
-      new_fallbacks(fallbacks)
-    end
-
-    # @deprecated Use {#fallbacks_generator=} instead.
-    def default_fallbacks=(fallbacks)
-      warn %{
-WARNING: The default_fallbacks= configuration setter has been renamed
-fallbacks_generator= to avoid confusion. The original method
-default_fallbacks= will be removed in the next major version of Mobility.
-}
-      self.fallbacks_generator = fallbacks
-    end
-
     # Default backend to use (can be symbol or actual backend class)
     # @return [Symbol,Class]
     attr_accessor :default_backend
 
-    # Returns set of default accessor locles to use (defaults to
-    # +I18n.available_locales+)
+    # Returns set of default accessor currencies to use (defaults to
+    # +Mobility.available_currencies+)
     # @return [Array<Symbol>]
-    def default_accessor_locales
-      if @default_accessor_locales.is_a?(Proc)
-        @default_accessor_locales.call
+    def default_accessor_currencies
+      if @default_accessor_currencies.is_a?(Proc)
+        @default_accessor_currencies.call
       else
-        @default_accessor_locales
+        @default_accessor_currencies
       end
     end
-    attr_writer :default_accessor_locales
+    attr_writer :default_accessor_currencies
 
     def initialize
       @accessor_method = :translates
       @query_method = :i18n
-      @fallbacks_generator = lambda { |fallbacks| Mobility::Fallbacks.build(fallbacks) }
-      @default_accessor_locales = lambda { Mobility.available_locales }
+      @default_currency = :usd
+      @default_accessor_currencies = lambda { Mobility.available_currencies }
       @default_options = Options[{
         cache:     true,
         presence:  true,
@@ -122,7 +88,7 @@ default_fallbacks= will be removed in the next major version of Mobility.
         default
         attribute_methods
         fallthrough_accessors
-        locale_accessors
+        currency_accessors
       ]
     end
 

@@ -1,5 +1,4 @@
 # frozen_string_literal: true
-require 'i18n'
 require 'request_store'
 require 'mobility/version'
 
@@ -30,7 +29,6 @@ module Mobility
   require "mobility/backends"
   require "mobility/backend_resetter"
   require "mobility/configuration"
-  require "mobility/fallbacks"
   require "mobility/loaded"
   require "mobility/plugins"
   require "mobility/translates"
@@ -108,31 +106,31 @@ module Mobility
       model_class.extend self
     end
 
-    # @!group Locale Accessors
-    # @return [Symbol] Mobility locale
-    def locale
-      read_locale || I18n.locale
+    # @!group Currency Accessors
+    # @return [Symbol] Mobility currency
+    def currency
+      read_currency
     end
 
-    # Sets Mobility locale
-    # @param [Symbol] locale Locale to set
-    # @raise [InvalidLocale] if locale is nil or not in
-    #   +Mobility.available_locales+ (if +I18n.enforce_available_locales+ is +true+)
-    # @return [Symbol] Locale
-    def locale=(locale)
-      set_locale(locale)
+    # Sets Mobility currency
+    # @param [Symbol] currency Currency to set
+    # @raise [InvalidCurrency] if currency is nil or not in
+    #   +Mobility.available_currencies+.
+    # @return [Symbol] Currency
+    def currency=(currency)
+      set_currency(currency)
     end
 
-    # Sets Mobility locale around block
-    # @param [Symbol] locale Locale to set in block
-    # @yield [Symbol] Locale
-    def with_locale(locale)
-      previous_locale = read_locale
+    # Sets Mobility currency around block
+    # @param [Symbol] currency Currency to set in block
+    # @yield [Symbol] Currency
+    def with_currency(currency)
+      previous_currency = read_currency
       begin
-        set_locale(locale)
-        yield(locale)
+        set_currency(currency)
+        yield(currency)
       ensure
-        set_locale(previous_locale)
+        set_currency(previous_currency)
       end
     end
     # @!endgroup
@@ -163,9 +161,6 @@ module Mobility
     # (see Mobility::Configuration#query_method)
     # @!method query_method
 
-    # (see Mobility::Configuration#new_fallbacks)
-    # @!method new_fallbacks
-
     # (see Mobility::Configuration#default_backend)
     # @!method default_backend
 
@@ -175,22 +170,12 @@ module Mobility
     # (see Mobility::Configuration#plugins)
     # @!method plugins
     #
-    # (see Mobility::Configuration#default_accessor_locales)
-    # @!method default_accessor_locales
-    %w[accessor_method query_method default_backend default_options plugins default_accessor_locales].each do |method_name|
+    # (see Mobility::Configuration#default_accessor_currencies)
+    # @!method default_accessor_currencies
+    %w[accessor_method query_method default_currency default_backend default_options plugins default_accessor_currencies].each do |method_name|
       define_method method_name do
         config.public_send(method_name)
       end
-    end
-
-    # TODO: Remove in v1.0
-    def default_fallbacks(*args)
-      config.public_send(:default_fallbacks, *args)
-    end
-
-    # TODO: Make private in v1.0
-    def new_fallbacks(*args)
-      config.public_send(:new_fallbacks, *args)
     end
 
     # Configure Mobility
@@ -200,80 +185,58 @@ module Mobility
     end
     # @!endgroup
 
-    # Return normalized locale
-    # @param [String,Symbol] locale
-    # @return [String] Normalized locale
+    # Return normalized currency
+    # @param [String,Symbol] currency
+    # @return [String] Normalized currency
     # @example
-    #   Mobility.normalize_locale(:ja)
-    #   #=> "ja"
-    #   Mobility.normalize_locale("pt-BR")
-    #   #=> "pt_br"
-    def normalize_locale(locale = Mobility.locale)
-      "#{locale.to_s.downcase.tr("-", "_")}"
+    #   Mobility.normalize_currency(:JPY)
+    #   #=> "jpy"
+    def normalize_currency(currency = Mobility.currency)
+      currency.to_s.downcase
     end
-    alias_method :normalized_locale, :normalize_locale
+    alias_method :normalized_currency, :normalize_currency
 
-    # Return normalized locale accessor name
+    # Return normalized currency accessor name
     # @param [String,Symbol] attribute
-    # @param [String,Symbol] locale
-    # @return [String] Normalized locale accessor name
+    # @param [String,Symbol] currency
+    # @return [String] Normalized currency accessor name
     # @raise [ArgumentError] if generated accessor has an invalid format
     # @example
-    #   Mobility.normalize_locale_accessor(:foo, :ja)
+    #   Mobility.normalize_currency_accessor(:foo, :ja)
     #   #=> "foo_ja"
-    #   Mobility.normalize_locale_accessor(:bar, "pt-BR")
+    #   Mobility.normalize_currency_accessor(:bar, "pt-BR")
     #   #=> "bar_pt_br"
-    def normalize_locale_accessor(attribute, locale = Mobility.locale)
-      "#{attribute}_#{normalize_locale(locale)}".tap do |accessor|
+    def normalize_currency_accessor(attribute, currency = Mobility.currency)
+      "#{attribute}_#{normalize_currency(currency)}".tap do |accessor|
         unless CALL_COMPILABLE_REGEXP.match(accessor)
           raise ArgumentError, "#{accessor.inspect} is not a valid accessor"
         end
       end
     end
 
-    # Raises InvalidLocale exception if the locale passed in is present but not available.
-    # @param [String,Symbol] locale
-    # @raise [InvalidLocale] if locale is present but not available
-    def enforce_available_locales!(locale)
-      # TODO: Remove conditional in v1.0
-      if I18n.enforce_available_locales
-        raise Mobility::InvalidLocale.new(locale) unless (locale.nil? || available_locales.include?(locale.to_sym))
-      else
-        warn <<-EOL
-WARNING: You called Mobility.enforce_available_locales! in a situation where
-I18n.enforce_available_locales is false. In the past, Mobility would do nothing
-in this case, but as of the next major release Mobility will ignore the I18n
-setting and enforce available locales whenever this method is called.
-EOL
-      end
+    # Raises InvalidCurrency exception if the currency passed in is present but not available.
+    # @param [String,Symbol] currency
+    # @raise [InvalidCurrency] if currency is present but not available
+    def enforce_available_currencies!(currency)
+      raise Mobility::InvalidCurrency.new(currency) unless (currency.nil? || available_currencies.include?(currency.to_sym))
     end
 
-    # Returns available locales. Defaults to I18n.available_locales, but will
-    # use Rails.application.config.i18n.available_locales if Rails is loaded
-    # and config is non-nil.
-    # @return [Array<Symbol>] Available locales
-    # @note The special case for Rails is necessary due to the fact that Rails
-    #   may load the model before setting +I18n.available_locales+. If we
-    #   simply default to +I18n.available_locales+, we may define many more
-    #   methods (in LocaleAccessors) than is really necessary.
-    def available_locales
-      if Loaded::Rails && Rails.application
-        Rails.application.config.i18n.available_locales || I18n.available_locales
-      else
-        I18n.available_locales
-      end
+    # Returns available currencies, taken from +Money::Currency.all+.
+    # @return [Array<Symbol>] Available currencies
+    def available_currencies
+      @available_currencies ||= Money::Currency.all.map(&:id)
     end
 
     protected
 
-    def read_locale
-      storage[:mobility_locale]
+    def read_currency
+      storage[:mobility_currency]
     end
 
-    def set_locale(locale)
-      locale = locale.to_sym if locale
-      enforce_available_locales!(locale) if I18n.enforce_available_locales
-      storage[:mobility_locale] = locale
+    def set_currency(currency)
+      currency = currency.to_sym if currency
+      enforce_available_currencies!(currency)
+      storage[:mobility_currency] = currency
     end
   end
 
@@ -312,6 +275,6 @@ version of Mobility. To get backends, use <post>.<attribute>_backend instead.}
     end
   end
 
-  class InvalidLocale < I18n::InvalidLocale; end
+  class InvalidCurrency < StandardError; end
   class NotImplementedError < StandardError; end
 end

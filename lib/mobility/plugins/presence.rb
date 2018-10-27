@@ -24,18 +24,18 @@ backend. Included by default, but can be disabled with +presence: false+ option.
       # @!macro backend_reader
       # @option options [Boolean] presence
       #   *false* to disable presence filter.
-      def read(locale, **options)
+      def read(currency, **options)
         options.delete(:presence) == false ? super : Presence[super]
       end
 
       # @!macro backend_writer
       # @option options [Boolean] presence
       #   *false* to disable presence filter.
-      def write(locale, value, **options)
+      def write(currency, value, **options)
         if options.delete(:presence) == false
           super
         else
-          super(locale, Presence[value], options)
+          super(currency, Presence[value], options)
         end
       end
       # @!endgroup

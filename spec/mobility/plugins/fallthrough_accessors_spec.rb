@@ -11,10 +11,10 @@ describe Mobility::Plugins::FallthroughAccessors do
 
   context "option value is truthy" do
     let(:option) { true }
-    it_behaves_like "locale accessor", :title, :en
-    it_behaves_like "locale accessor", :title, :de
-    it_behaves_like "locale accessor", :title, :'pt-BR'
-    it_behaves_like "locale accessor", :title, :'ru'
+    it_behaves_like "currency accessor", :title, :en
+    it_behaves_like "currency accessor", :title, :de
+    it_behaves_like "currency accessor", :title, :'pt-BR'
+    it_behaves_like "currency accessor", :title, :'ru'
   end
 
   context "option value is false" do

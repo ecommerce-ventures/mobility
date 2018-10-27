@@ -2,7 +2,7 @@ module Mobility
   module Backends
 =begin
 
-Stores translations as hash on Postgres jsonb column.
+Stores prices as hash on Postgres jsonb column.
 
 ==Backend Options
 

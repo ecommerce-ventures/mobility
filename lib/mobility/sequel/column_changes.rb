@@ -14,10 +14,10 @@ setter method is called.
         attributes.each do |attribute|
           define_method "#{attribute}=" do |value, **options|
             if !options[:super] && send(attribute) != value
-              locale = options[:locale] || Mobility.locale
+              currency = options[:currency] || Mobility.currency
               column = (column_affix % attribute).to_sym
-              attribute_with_locale = :"#{attribute}_#{Mobility.normalize_locale(locale)}"
-              @changed_columns = changed_columns | [column, attribute.to_sym, attribute_with_locale]
+              attribute_with_currency = :"#{attribute}_#{Mobility.normalize_currency(currency)}"
+              @changed_columns = changed_columns | [column, attribute.to_sym, attribute_with_currency]
             end
             super(value, **options)
           end

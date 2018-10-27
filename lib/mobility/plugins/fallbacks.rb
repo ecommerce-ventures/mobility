@@ -5,13 +5,10 @@ module Mobility
   module Plugins
 =begin
 
-Falls back to one or more alternative locales in case no value is defined for a
-given locale.
+Falls back to one or more alternative currencies in case no value is defined for a
+given currency.
 
-For +fallbacks: true+, Mobility will use the value of
-{Mobility::Configuration#new_fallbacks} for the fallbacks instance. This
-defaults to an instance of +I18n::Locale::Fallbacks+, but can be
-configured (see {Mobility::Configuration}).
+For +fallbacks: true+, Mobility will fall back to +Mobility.default_currency+.
 
 If a hash is passed to the +fallbacks+ option, a new fallbacks instance will be
 created for the model with the hash defining additional fallbacks. To set a
@@ -23,32 +20,30 @@ fallbacks when reading and writing, you can pass the <tt>fallback: false</tt>
 option to the reader method. This can be useful to determine the actual
 value of the translated attribute, including a possible +nil+ value.
 
-The other situation where fallbacks are disabled is when the locale is
-specified explicitly, either by passing a `locale` option to the accessor or by
-using locale or fallthrough accessors. (See example below.)
+The other situation where fallbacks are disabled is when the currency is
+specified explicitly, either by passing a `currency` option to the accessor or by
+using currency or fallthrough accessors. (See example below.)
 
-You can also pass a locale or array of locales to the +fallback+ option to use
-that locale or locales that read, e.g. <tt>fallback: :fr</tt> would fetch the
-French translation if the value in the current locale was +nil+, whereas
+You can also pass a currency or array of currencies to the +fallback+ option to use
+that currency or currencies that read, e.g. <tt>fallback: :fr</tt> would fetch the
+French translation if the value in the current currency was +nil+, whereas
 <tt>fallback: [:fr, :es]</tt> would try French, then Spanish if the value in
-the current locale was +nil+.
+the current currency was +nil+.
 
-@see https://github.com/svenfuchs/i18n/wiki/Fallbacks I18n Fallbacks
-
-@example With default fallbacks enabled (falls through to default locale)
+@example With default fallbacks enabled (falls through to default currency)
   class Post
     extend Mobility
     translates :title, fallbacks: true
   end
 
-  I18n.default_locale = :en
-  Mobility.locale = :en
+  Mobility.default_currency = :en
+  Mobility.currency = :en
   post = Post.new(title: "foo")
 
-  Mobility.locale = :ja
+  Mobility.currency = :ja
   post.title
   #=> "foo"
- 
+
   post.title = "bar"
   post.title
   #=> "bar"
@@ -59,10 +54,10 @@ the current locale was +nil+.
     translates :title, fallbacks: { :'en-US' => 'de-DE', :pt => 'de-DE' }
   end
 
-  Mobility.locale = :'de-DE'
+  Mobility.currency = :'de-DE'
   post = Post.new(title: "foo")
 
-  Mobility.locale = :'en-US'
+  Mobility.currency = :'en-US'
   post.title
   #=> "foo"
 
@@ -76,12 +71,12 @@ the current locale was +nil+.
     translates :title, fallbacks: true
   end
 
-  I18n.default_locale = :en
-  Mobility.locale = :en
+  Mobility.default_currency = :en
+  Mobility.currency = :en
   post = Post.new(title: "Mobility")
-  Mobility.with_locale(:fr) { post.title = "Mobilité" }
+  Mobility.with_currency(:fr) { post.title = "Mobilité" }
 
-  Mobility.locale = :ja
+  Mobility.currency = :ja
   post.title
   #=> "Mobility"
   post.title(fallback: false)
@@ -92,19 +87,19 @@ the current locale was +nil+.
 @example Fallbacks disabled
   class Post
     extend Mobility
-    translates :title, fallbacks: { :'fr' => 'en' }, locale_accessors: true
+    translates :title, fallbacks: { :'fr' => 'en' }, currency_accessors: true
   end
 
-  I18n.default_locale = :en
-  Mobility.locale = :en
+  Mobility.default_currency = :en
+  Mobility.currency = :en
   post = Post.new(title: "Mobility")
 
-  Mobility.locale = :fr
+  Mobility.currency = :fr
   post.title
   #=> "Mobility"
   post.title(fallback: false)
   #=> nil
-  post.title(locale: :fr)
+  post.title(currency: :fr)
   #=> nil
   post.title_fr
   #=> nil
@@ -138,16 +133,16 @@ the current locale was +nil+.
       private
 
       def define_read(fallbacks)
-        define_method :read do |locale, fallback: true, **options|
-          return super(locale, options) if !fallback || options[:locale]
+        define_method :read do |currency, fallback: true, **options|
+          return super(currency, options) if !fallback || options[:currency]
 
-          locales = fallback == true ? fallbacks[locale] : [locale, *fallback]
-          locales.each do |fallback_locale|
-            value = super(fallback_locale, options)
+          currencies = fallback == true ? fallbacks[currency] : [currency, *fallback]
+          currencies.each do |fallback_currency|
+            value = super(fallback_currency, options)
             return value if Util.present?(value)
           end
 
-          super(locale, options)
+          super(currency, options)
         end
       end
 

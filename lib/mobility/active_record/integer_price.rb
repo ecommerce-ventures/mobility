@@ -3,8 +3,8 @@ require "mobility/active_record/price"
 
 module Mobility
   module ActiveRecord
-    class FloatPrice < Price
-      self.table_name = "mobility_float_prices"
+    class IntegerPrice < Price
+      self.table_name = "mobility_integer_prices"
     end
   end
 end

@@ -30,51 +30,25 @@ describe Mobility::InstallGenerator, type: :generator, orm: :active_record do
       }
     end
 
-    it "generates migration for text translations table" do
+    it "generates migration for integer prices table" do
       version_string_ = version_string
 
       expect(destination_root).to have_structure {
         directory "db" do
           directory "migrate" do
-            migration "create_text_translations" do
+            migration "create_integer_prices" do
               if ENV["RAILS_VERSION"] < "5.0"
-                contains "class CreateTextTranslations < ActiveRecord::Migration"
+                contains "class CreateIntegerPrices < ActiveRecord::Migration"
               else
-                contains "class CreateTextTranslations < ActiveRecord::Migration[#{version_string_}]"
+                contains "class CreateIntegerPrices < ActiveRecord::Migration[#{version_string_}]"
               end
               contains "def change"
-              contains "create_table :mobility_text_translations"
+              contains "create_table :mobility_integer_prices"
               contains "t.text :value"
-              contains "t.references :translatable, polymorphic: true, index: false"
-              contains "add_index :mobility_text_translations"
-              contains "name: :index_mobility_text_translations_on_keys"
-              contains "name: :index_mobility_text_translations_on_translatable_attribute"
-            end
-          end
-        end
-      }
-    end
-
-    it "generates migration for string translations table" do
-      version_string_ = version_string
-
-      expect(destination_root).to have_structure {
-        directory "db" do
-          directory "migrate" do
-            migration "create_string_translations" do
-              if ENV["RAILS_VERSION"] < "5.0"
-                contains "class CreateStringTranslations < ActiveRecord::Migration"
-              else
-                contains "class CreateStringTranslations < ActiveRecord::Migration[#{version_string_}]"
-              end
-              contains "def change"
-              contains "create_table :mobility_string_translations"
-              contains "t.string :value"
-              contains "t.references :translatable, polymorphic: true, index: false"
-              contains "add_index :mobility_string_translations"
-              contains "name: :index_mobility_string_translations_on_keys"
-              contains "name: :index_mobility_string_translations_on_translatable_attribute"
-              contains "name: :index_mobility_string_translations_on_query_keys"
+              contains "t.references :priceable, polymorphic: true, index: false"
+              contains "add_index :mobility_integer_prices"
+              contains "name: :index_mobility_integer_prices_on_keys"
+              contains "name: :index_mobility_integer_prices_on_priceable_attribute"
             end
           end
         end
@@ -88,7 +62,7 @@ describe Mobility::InstallGenerator, type: :generator, orm: :active_record do
       run_generator %w(--without_tables)
     end
 
-    it "does not generate migration for translations tables" do
+    it "does not generate migration for prices tables" do
       expect((Pathname.new(destination_root) + "db" + "migrate").exist?).to eq(false)
     end
   end

@@ -19,7 +19,7 @@ module Mobility
       alias_method :model_table_name, :table_name
       def table_name
         model_table_name = super
-        "#{model_table_name.singularize}_translations"
+        "#{model_table_name.singularize}_prices"
       end
 
       def foreign_key

@@ -19,7 +19,7 @@ describe "Mobility::Backends::Sequel::KeyValue", orm: :sequel do
 
   context "with standard plugins applied" do
     let(:described_class) { Mobility::Backends::Sequel::KeyValue }
-    let(:translation_class) { Mobility::Sequel::TextTranslation }
+    let(:price_class) { Mobility::Sequel::IntegerPrice }
     let(:title_backend) { article.mobility_backends[:title] }
     let(:content_backend) { article.mobility_backends[:content] }
 
@@ -39,7 +39,7 @@ describe "Mobility::Backends::Sequel::KeyValue", orm: :sequel do
     describe "cache" do
       let(:article) { Article.new }
 
-      it "only fetches translation once per locale" do
+      it "only fetches price once per currency" do
         expect(article.send(title_backend.association_name)).to receive(:find).twice.and_call_original
         title_backend.write(:en, "foo")
         title_backend.write(:en, "bar")
@@ -48,7 +48,7 @@ describe "Mobility::Backends::Sequel::KeyValue", orm: :sequel do
         expect(title_backend.read(:fr)).to eq("baz")
       end
 
-      it "resets translations cache when model is refreshed" do
+      it "resets prices cache when model is refreshed" do
         aggregate_failures "cacheing reads" do
           title_backend.read(:en)
           expect(title_backend.send(:cache).size).to eq(1)
@@ -79,14 +79,14 @@ describe "Mobility::Backends::Sequel::KeyValue", orm: :sequel do
       describe "#read" do
         before do
           [
-            { key: "title", value: "New Article", locale: "en", translatable: article },
-            { key: "title", value: "新規記事", locale: "ja", translatable: article },
-            { key: "content", value: "Once upon a time...", locale: "en", translatable: article },
-            { key: "content", value: "昔々あるところに…", locale: "ja", translatable: article }
-          ].each { |attrs| translation_class.create(attrs) }
+            { key: "title", value: "New Article", currency: "en", translatable: article },
+            { key: "title", value: "新規記事", currency: "ja", translatable: article },
+            { key: "content", value: "Once upon a time...", currency: "en", translatable: article },
+            { key: "content", value: "昔々あるところに…", currency: "ja", translatable: article }
+          ].each { |attrs| price_class.create(attrs) }
         end
 
-        it "returns attribute in locale from translations table" do
+        it "returns attribute in currency from prices table" do
           aggregate_failures do
             expect(title_backend.read(:en)).to eq("New Article")
             expect(content_backend.read(:en)).to eq("Once upon a time...")
@@ -95,7 +95,7 @@ describe "Mobility::Backends::Sequel::KeyValue", orm: :sequel do
           end
         end
 
-        it "returns nil if no translation exists" do
+        it "returns nil if no price exists" do
           expect(title_backend.read(:de)).to eq(nil)
         end
 
@@ -111,111 +111,111 @@ describe "Mobility::Backends::Sequel::KeyValue", orm: :sequel do
       end
 
       describe "#write" do
-        context "no translation for locale exists" do
-          it "stashes translation with value" do
-            translation = translation_class.new(locale: :en, key: "title")
+        context "no price for currency exists" do
+          it "stashes price with value" do
+            price = price_class.new(currency: :en, key: "title")
 
-            expect(translation_class).to receive(:new).with(locale: :en, key: "title").and_return(translation)
+            expect(price_class).to receive(:new).with(currency: :en, key: "title").and_return(price)
             expect {
               title_backend.write(:en, "New Article")
-            }.not_to change(translation_class, :count)
+            }.not_to change(price_class, :count)
 
             aggregate_failures do
-              expect(translation.locale).to eq("en")
-              expect(translation.key).to eq("title")
-              expect(translation.value).to eq("New Article")
+              expect(price.currency).to eq("en")
+              expect(price.key).to eq("title")
+              expect(price.value).to eq("New Article")
             end
           end
 
-          it "creates translation for locale when model is saved" do
+          it "creates price for currency when model is saved" do
             title_backend.write(:en, "New Article")
-            expect { subject.save }.to change(translation_class, :count).by(1)
+            expect { subject.save }.to change(price_class, :count).by(1)
           end
         end
 
-        context "translation for locale exists" do
+        context "price for currency exists" do
           before do
-            translation_class.create(
+            price_class.create(
               key: "title",
               value: "foo",
-              locale: "en",
+              currency: "en",
               translatable: subject
             )
           end
 
-          it "does not create new translation for locale" do
+          it "does not create new price for currency" do
             expect {
               title_backend.write(:en, "New Article")
               subject.save
-            }.not_to change(translation_class, :count)
+            }.not_to change(price_class, :count)
           end
 
-          it "updates value attribute on existing translation" do
+          it "updates value attribute on existing price" do
             title_backend.write(:en, "New New Article")
             subject.save
             subject.reload
 
-            translation = subject.send(title_backend.association_name).first
+            price = subject.send(title_backend.association_name).first
 
             aggregate_failures do
-              expect(translation.key).to eq("title")
-              expect(translation.value).to eq("New New Article")
-              expect(translation.locale).to eq("en")
-              expect(translation.translatable).to eq(subject)
+              expect(price.key).to eq("title")
+              expect(price.value).to eq("New New Article")
+              expect(price.currency).to eq("en")
+              expect(price.translatable).to eq(subject)
             end
           end
 
-          it "removes translation if assigned nil when record is saved" do
+          it "removes price if assigned nil when record is saved" do
             expect {
               title_backend.write(:en, nil)
-            }.not_to change(translation_class, :count)
+            }.not_to change(price_class, :count)
 
             expect {
               subject.save
-            }.to change(translation_class, :count).by(-1)
+            }.to change(price_class, :count).by(-1)
           end
         end
       end
     end
 
-    describe "translations association" do
+    describe "prices association" do
       let(:article) { Article.create(title: "Article", subtitle: "Article subtitle", content: "Content") }
 
-      it "limits association to translations with keys matching attributes" do
-        translation = Mobility::Sequel::TextTranslation.create(key: "foo", value: "bar", locale: "en", translatable: article)
+      it "limits association to prices with keys matching attributes" do
+        price = Mobility::Sequel::IntegerPrice.create(key: "foo", value: "bar", currency: "en", translatable: article)
         article = Article.first
 
         aggregate_failures do
-          expect(article.send(title_backend.association_name)).not_to include(translation)
+          expect(article.send(title_backend.association_name)).not_to include(price)
           expect(article.send(title_backend.association_name).count).to eq(3)
         end
       end
     end
 
-    describe "creating a new record with translations" do
+    describe "creating a new record with prices" do
       let!(:article) { Article.create(title: "New Article", content: "Once upon a time...") }
 
-      it "creates record and translation in current locale" do
-        Mobility.locale = :en
+      it "creates record and price in current currency" do
+        Mobility.currency = :en
 
         aggregate_failures do
           expect(Article.count).to eq(1)
-          expect(Mobility::Sequel::TextTranslation.count).to eq(2)
+          expect(Mobility::Sequel::IntegerPrice.count).to eq(2)
           expect(article.send(title_backend.association_name).size).to eq(2)
           expect(article.title).to eq("New Article")
           expect(article.content).to eq("Once upon a time...")
         end
       end
 
-      it "creates translations for other locales" do
-        Mobility.locale = :en
+      it "creates prices for other currencies" do
+        Mobility.currency = :en
 
-        aggregate_failures "in one locale" do
+        aggregate_failures "in one currency" do
           expect(article.send(title_backend.association_name).count).to eq(2)
         end
 
-        aggregate_failures "in other locale" do
-          Mobility.locale = :ja
+        aggregate_failures "in other currency" do
+          Mobility.currency = :ja
           expect(article.title).to eq(nil)
           expect(article.content).to eq(nil)
           article.update(title: "新規記事", content: "昔々あるところに…")
@@ -227,19 +227,19 @@ describe "Mobility::Backends::Sequel::KeyValue", orm: :sequel do
         aggregate_failures "after reloading" do
           article = Article.first
           expect(article.send(title_backend.association_name).count).to eq(4)
-          expect(Mobility::Sequel::TextTranslation.count).to eq(4)
+          expect(Mobility::Sequel::IntegerPrice.count).to eq(4)
         end
       end
     end
 
-    context "with separate string and text translations" do
+    context "with separate string and text prices" do
       before do
         Article.class_eval do
-          translates :short_title, backend: :key_value, class_name: Mobility::Sequel::StringTranslation, association_name: :string_translations
+          translates :short_title, backend: :key_value, class_name: Mobility::Sequel::FloatPrice, association_name: :float_prices
         end
       end
 
-      it "saves translations correctly" do
+      it "saves prices correctly" do
         article = Article.create(title: "foo title", short_title: "bar short title")
 
         aggregate_failures "setting attributes" do
@@ -252,40 +252,40 @@ describe "Mobility::Backends::Sequel::KeyValue", orm: :sequel do
           expect(article.title).to eq("foo title")
           expect(article.short_title).to eq("bar short title")
 
-          text = Mobility::Sequel::TextTranslation.first
+          text = Mobility::Sequel::IntegerPrice.first
           expect(text.value).to eq("foo title")
 
-          string = Mobility::Sequel::StringTranslation.first
+          string = Mobility::Sequel::FloatPrice.first
           expect(string.value).to eq("bar short title")
         end
       end
     end
 
-    describe "storing translations" do
+    describe "storing prices" do
       let!(:article) do
-        Mobility.with_locale(:en) { article = Article.create(title: "New Article") }
+        Mobility.with_currency(:en) { article = Article.create(title: "New Article") }
       end
 
-      it "does not save translations unless they have a value present" do
+      it "does not save prices unless they have a value present" do
         aggregate_failures do
-          Mobility.locale = :ja
+          Mobility.currency = :ja
           article.title
           article.save
-          expect(translation_class.count).to eq(1)
+          expect(price_class.count).to eq(1)
           expect(article.send(title_backend.association_name).count).to eq(1)
           article.title = ""
           article.save
           expect(article.title).to be_nil
-          expect(translation_class.count).to eq(1)
+          expect(price_class.count).to eq(1)
         end
       end
 
-      it "destroys translation on save if value is set to a blank value" do
+      it "destroys price on save if value is set to a blank value" do
         article.title = ""
 
         aggregate_failures do
-          expect { article.valid? }.not_to change(translation_class, :count)
-          expect { article.save }.to change(translation_class, :count).by(-1)
+          expect { article.valid? }.not_to change(price_class, :count)
+          expect { article.save }.to change(price_class, :count).by(-1)
 
           expect(article.title).to eq(nil)
         end
@@ -301,57 +301,57 @@ describe "Mobility::Backends::Sequel::KeyValue", orm: :sequel do
         end
         Article.prepend(mod)
 
-        Mobility.locale = :en
+        Mobility.currency = :en
         article = Article.create(title: "New Article")
         article.save
         expect(article.after_save_called).to eq(true)
       end
 
-      it "resets translations if model is reloaded" do
-        Mobility.locale = :ja
+      it "resets prices if model is reloaded" do
+        Mobility.currency = :ja
         article.title = "新規記事"
 
         article.reload
         article.save
 
         aggregate_failures do
-          expect(translation_class.count).to eq(1)
-          expect(translation_class.first.value).to eq("New Article")
+          expect(price_class.count).to eq(1)
+          expect(price_class.first.value).to eq("New Article")
         end
       end
     end
 
     describe "after destroy" do
-      # In case we change the translated attributes on a model, we need to make
+      # In case we change the priced attributes on a model, we need to make
       # sure we clean them up when the model is destroyed.
-      it "cleans up all associated translations, regardless of key" do
+      it "cleans up all associated prices, regardless of key" do
         article = Article.create(title: "foo title", content: "foo content")
-        Mobility.with_locale(:ja) { article.update(title: "あああ", content: "ばばば") }
+        Mobility.with_currency(:ja) { article.update(title: "あああ", content: "ばばば") }
         article.save
 
-        # Create translations on another model, to check they do not get destroyed
+        # Create prices on another model, to check they do not get destroyed
         Post.create(title: "post title", content: "post content")
 
-        expect(Mobility::Sequel::StringTranslation.count).to eq(1)
-        expect(Mobility::Sequel::TextTranslation.count).to eq(5)
+        expect(Mobility::Sequel::FloatPrice.count).to eq(1)
+        expect(Mobility::Sequel::IntegerPrice.count).to eq(5)
 
-        Mobility::Sequel::TextTranslation.create(translatable: article, key: "key1", value: "value1", locale: "de")
-        Mobility::Sequel::StringTranslation.create(translatable: article, key: "key2", value: "value2", locale: "fr")
-        expect(Mobility::Sequel::TextTranslation.count).to eq(6)
-        expect(Mobility::Sequel::StringTranslation.count).to eq(2)
+        Mobility::Sequel::IntegerPrice.create(translatable: article, key: "key1", value: "value1", currency: "de")
+        Mobility::Sequel::FloatPrice.create(translatable: article, key: "key2", value: "value2", currency: "fr")
+        expect(Mobility::Sequel::IntegerPrice.count).to eq(6)
+        expect(Mobility::Sequel::FloatPrice.count).to eq(2)
 
         article.destroy
-        expect(Mobility::Sequel::TextTranslation.count).to eq(1)
-        expect(Mobility::Sequel::StringTranslation.count).to eq(1)
+        expect(Mobility::Sequel::IntegerPrice.count).to eq(1)
+        expect(Mobility::Sequel::FloatPrice.count).to eq(1)
       end
 
-      it "only destroys translations once when cleaning up" do
+      it "only destroys prices once when cleaning up" do
         article = Article.create(title: "foo title", content: "foo content")
         # This is an ugly way to check that we are not destroying all
-        # translations twice. Since the actual callback is included in a module,
+        # prices twice. Since the actual callback is included in a module,
         # it's hard to get at this directly.
-        expect(Mobility::Sequel::TextTranslation).to receive(:where).once.and_call_original
-        expect(Mobility::Sequel::StringTranslation).to receive(:where).once.and_call_original
+        expect(Mobility::Sequel::IntegerPrice).to receive(:where).once.and_call_original
+        expect(Mobility::Sequel::FloatPrice).to receive(:where).once.and_call_original
         article.destroy
       end
     end
@@ -362,10 +362,10 @@ describe "Mobility::Backends::Sequel::KeyValue", orm: :sequel do
         described_class.configure(options)
         expect(options).to eq({
           type: :string,
-          class_name: Mobility::Sequel::StringTranslation,
+          class_name: Mobility::Sequel::FloatPrice,
           model_class: Post,
-          association_name: :string_translations,
-          table_alias_affix: "Post_%s_string_translations"
+          association_name: :float_prices,
+          table_alias_affix: "Post_%s_float_prices"
         })
       end
 
@@ -374,17 +374,17 @@ describe "Mobility::Backends::Sequel::KeyValue", orm: :sequel do
         described_class.configure(options)
         expect(options).to eq({
           type: :text,
-          class_name: Mobility::Sequel::TextTranslation,
+          class_name: Mobility::Sequel::IntegerPrice,
           model_class: Post,
-          association_name: :text_translations,
-          table_alias_affix: "Post_%s_text_translations"
+          association_name: :integer_prices,
+          table_alias_affix: "Post_%s_integer_prices"
         })
       end
 
       it "raises ArgumentError if type has no corresponding model class" do
         expect { described_class.configure(type: "integer") }
           .to raise_error(ArgumentError,
-                          "You must define a Mobility::Sequel::IntegerTranslation class.")
+                          "You must define a Mobility::Sequel::IntegerPrice class.")
       end
 
 
@@ -393,10 +393,10 @@ describe "Mobility::Backends::Sequel::KeyValue", orm: :sequel do
         described_class.configure(options)
         expect(options).to eq({
           type: :text,
-          class_name: Mobility::Sequel::TextTranslation,
+          class_name: Mobility::Sequel::IntegerPrice,
           model_class: Post,
-          association_name: :text_translations,
-          table_alias_affix: "Post_%s_text_translations"
+          association_name: :integer_prices,
+          table_alias_affix: "Post_%s_integer_prices"
         })
       end
     end
@@ -410,10 +410,10 @@ describe "Mobility::Backends::Sequel::KeyValue", orm: :sequel do
         end
       end
 
-      context "model with two translated attributes on different tables" do
+      context "model with two priced attributes on different tables" do
         before do
           Article.class_eval do
-            translates :short_title, backend: :key_value, class_name: Mobility::Sequel::StringTranslation, association_name: :string_translations
+            translates :short_title, backend: :key_value, class_name: Mobility::Sequel::FloatPrice, association_name: :float_prices
           end
           @article1 = Article.create(title: "foo post", short_title: "bar short 1")
           @article2 = Article.create(title: "foo post", short_title: "bar short 2")

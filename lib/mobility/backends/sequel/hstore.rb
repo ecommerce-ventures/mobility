@@ -15,21 +15,21 @@ Implements the {Mobility::Backends::Hstore} backend for Sequel models.
       class Hstore < PgHash
         # @!group Backend Accessors
         # @!macro backend_reader
-        # @!method read(locale, options = {})
+        # @!method read(currency, options = {})
 
         # @!group Backend Accessors
         # @!macro backend_writer
-        def write(locale, value, options = {})
-          super(locale, value && value.to_s, options)
+        def write(currency, value, options = {})
+          super(currency, value && value.to_s, options)
         end
         # @!endgroup
 
         # @param [Symbol] name Attribute name
-        # @param [Symbol] locale Locale
+        # @param [Symbol] currency Currency
         # @return [Mobility::Backends::Sequel::Hstore::HStoreOp]
-        def self.build_op(attr, locale)
+        def self.build_op(attr, currency)
           column_name = column_affix % attr
-          HStoreOp.new(column_name.to_sym)[locale.to_s]
+          HStoreOp.new(column_name.to_sym)[currency.to_s]
         end
 
         class HStoreOp < ::Sequel::Postgres::HStoreOp; end

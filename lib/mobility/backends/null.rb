@@ -10,10 +10,10 @@ Backend which does absolutely nothing. Mostly for testing purposes.
 
       # @!group Backend Accessors
       # @return [NilClass]
-      def read(_locale, _options = nil); end
+      def read(_currency, _options = nil); end
 
       # @return [NilClass]
-      def write(_locale, _value, _options = nil); end
+      def write(_currency, _value, _options = nil); end
       # @!endgroup
 
       # @!group Backend Configuration

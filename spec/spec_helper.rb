@@ -20,9 +20,9 @@ require 'json'
 require 'mobility'
 require "mobility/backends/null"
 
-I18n.enforce_available_locales = true
-I18n.available_locales = [:en, :'en-US', :ja, :fr, :de, :'de-DE', :cz, :pl, :pt, :'pt-BR']
-I18n.default_locale = :en
+I18n.enforce_available_currencies = true
+I18n.available_currencies = [:en, :'en-US', :ja, :fr, :de, :'de-DE', :cz, :pl, :pt, :'pt-BR']
+I18n.default_currency = :en
 
 Dir[File.expand_path("./spec/support/**/*.rb")].each { |f| require f }
 
@@ -62,7 +62,7 @@ RSpec.configure do |config|
     end
     # Always clear I18n.fallbacks to avoid "leakage" between specs
     reset_i18n_fallbacks
-    Mobility.locale = :en
+    Mobility.currency = :en
   end
 
   unless orm == 'none'

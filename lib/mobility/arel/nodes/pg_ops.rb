@@ -74,19 +74,19 @@ module Mobility
       class Json < JsonDashDoubleArrow; end
 
       class JsonContainer < Json
-        def initialize column, locale, attr
-          super(Arel::Nodes::JsonDashArrow.new(column, locale), attr)
+        def initialize column, currency, attr
+          super(Arel::Nodes::JsonDashArrow.new(column, currency), attr)
         end
       end
 
       class JsonbContainer < Jsonb
-        def initialize column, locale, attr
-          @column, @locale = column, locale
-          super(JsonbDashArrow.new(column, locale), attr)
+        def initialize column, currency, attr
+          @column, @currency = column, currency
+          super(JsonbDashArrow.new(column, currency), attr)
         end
 
         def eq other
-          other.nil? ? super.or(JsonbQuestion.new(@column, @locale).not) : super
+          other.nil? ? super.or(JsonbQuestion.new(@column, @currency).not) : super
         end
       end
     end

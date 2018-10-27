@@ -257,28 +257,28 @@ describe Mobility::Attributes do
 
       shared_examples_for "reader" do
         it "correctly maps getter method for translated attribute to backend" do
-          expect(Mobility).to receive(:locale).and_return(:de)
+          expect(Mobility).to receive(:currency).and_return(:de)
           expect(backend).to receive(:read).with(:de, {}).and_return("foo")
           expect(article.title).to eq("foo")
         end
 
         it "correctly maps presence method for translated attribute to backend" do
-          expect(Mobility).to receive(:locale).and_return(:de)
+          expect(Mobility).to receive(:currency).and_return(:de)
           expect(backend).to receive(:read).with(:de, {}).and_return("foo")
           expect(article.title?).to eq(true)
         end
 
-        it "correctly maps locale through getter options and converts to boolean" do
-          expect(backend).to receive(:read).with(:fr, locale: true).and_return("foo")
-          expect(article.title(locale: "fr")).to eq("foo")
+        it "correctly maps currency through getter options and converts to boolean" do
+          expect(backend).to receive(:read).with(:fr, currency: true).and_return("foo")
+          expect(article.title(currency: "fr")).to eq("foo")
         end
 
-        it "raises InvalidLocale exception if locale is not in I18n.available_locales" do
-          expect { article.title(locale: :it) }.to raise_error(Mobility::InvalidLocale)
+        it "raises InvalidCurrency exception if currency is not in I18n.available_currencies" do
+          expect { article.title(currency: :it) }.to raise_error(Mobility::InvalidCurrency)
         end
 
         it "correctly maps other options to getter" do
-          expect(Mobility).to receive(:locale).and_return(:de)
+          expect(Mobility).to receive(:currency).and_return(:de)
           expect(backend).to receive(:read).with(:de, someopt: "someval").and_return("foo")
           expect(article.title(someopt: "someval")).to eq("foo")
         end
@@ -296,13 +296,13 @@ describe Mobility::Attributes do
 
       shared_examples_for "writer" do
         it "correctly maps setter method for translated attribute to backend" do
-          expect(Mobility).to receive(:locale).and_return(:de)
+          expect(Mobility).to receive(:currency).and_return(:de)
           expect(backend).to receive(:write).with(:de, "foo", {})
           article.title = "foo"
         end
 
         it "correctly maps other options to setter" do
-          expect(Mobility).to receive(:locale).and_return(:de)
+          expect(Mobility).to receive(:currency).and_return(:de)
           expect(backend).to receive(:write).with(:de, "foo", someopt: "someval").and_return("foo")
           expect(article.send(:title=, "foo", someopt: "someval")).to eq("foo")
         end
@@ -346,28 +346,28 @@ describe Mobility::Attributes do
       # to consider storing blank values.
       it "converts blanks to nil when receiving from backend getter" do
         Article.include described_class.new(:reader, "title", backend: backend_class)
-        allow(Mobility).to receive(:locale).and_return(:cz)
+        allow(Mobility).to receive(:currency).and_return(:cz)
         expect(backend).to receive(:read).with(:cz, {}).and_return("")
         expect(article.title).to eq(nil)
       end
 
       it "converts blanks to nil when sending to backend setter" do
         Article.include described_class.new(:writer, "title", backend: backend_class)
-        allow(Mobility).to receive(:locale).and_return(:fr)
+        allow(Mobility).to receive(:currency).and_return(:fr)
         expect(backend).to receive(:write).with(:fr, nil, {})
         article.title = ""
       end
 
       it "does not convert false values to nil when receiving from backend getter" do
         Article.include described_class.new(:reader, "title", backend: backend_class)
-        allow(Mobility).to receive(:locale).and_return(:cz)
+        allow(Mobility).to receive(:currency).and_return(:cz)
         expect(backend).to receive(:read).with(:cz, {}).and_return(false)
         expect(article.title).to eq(false)
       end
 
       it "does not convert false values to nil when sending to backend setter" do
         Article.include described_class.new(:writer, "title", backend: backend_class)
-        allow(Mobility).to receive(:locale).and_return(:fr)
+        allow(Mobility).to receive(:currency).and_return(:fr)
         expect(backend).to receive(:write).with(:fr, false, {})
         article.title = false
       end

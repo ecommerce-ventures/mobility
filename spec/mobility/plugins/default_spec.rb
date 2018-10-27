@@ -53,7 +53,7 @@ describe Mobility::Plugins::Default do
       end
 
       context "default is a Proc" do
-        let(:default) { Proc.new { |attribute, locale, options| "#{attribute} in #{locale} with #{options[:this]}" } }
+        let(:default) { Proc.new { |attribute, currency, options| "#{attribute} in #{currency} with #{options[:this]}" } }
 
         it "calls default with model and attribute as args if default is a Proc" do
           expect(backend_double).to receive(:read).once.with(:fr, this: 'option').and_return(nil)
@@ -74,12 +74,12 @@ describe Mobility::Plugins::Default do
 
             # with two arguments
             expect(backend_double).to receive(:read).once.with(:fr, this: 'option').and_return(nil)
-            default_as_option = Proc.new { |attribute, locale| "default #{attribute} #{locale}" }
+            default_as_option = Proc.new { |attribute, currency| "default #{attribute} #{currency}" }
             expect(backend.read(:fr, default: default_as_option, this: 'option')).to eq("default title fr")
 
             # with three arguments
             expect(backend_double).to receive(:read).once.with(:fr, this: 'option').and_return(nil)
-            default_as_option = Proc.new { |attribute, locale, options| "default #{attribute} #{locale} #{options[:this]}" }
+            default_as_option = Proc.new { |attribute, currency, options| "default #{attribute} #{currency} #{options[:this]}" }
             expect(backend.read(:fr, default: default_as_option, this: 'option')).to eq("default title fr option")
 
             # with any arguments

@@ -27,13 +27,13 @@ value of the translated attribute if passed to it.
         # @!group Backend Accessors
         # @!macro backend_writer
         # @param [Hash] options
-        def write(locale, value, options = {})
-          locale_accessor = Mobility.normalize_locale_accessor(attribute, locale)
-          if model.changed_attributes.has_key?(locale_accessor) && model.changed_attributes[locale_accessor] == value
-            model.send(:attributes_changed_by_setter).except!(locale_accessor)
-          elsif read(locale, options.merge(locale: true)) != value
-            model.send(:mobility_changed_attributes) << locale_accessor
-            model.send(:attribute_will_change!, locale_accessor)
+        def write(currency, value, options = {})
+          currency_accessor = Mobility.normalize_currency_accessor(attribute, currency)
+          if model.changed_attributes.has_key?(currency_accessor) && model.changed_attributes[currency_accessor] == value
+            model.send(:attributes_changed_by_setter).except!(currency_accessor)
+          elsif read(currency, options.merge(currency: true)) != value
+            model.send(:mobility_changed_attributes) << currency_accessor
+            model.send(:attribute_will_change!, currency_accessor)
           end
           super
         end
@@ -46,14 +46,14 @@ value of the translated attribute if passed to it.
             attribute_names.each do |name|
               method_suffixes.each do |suffix|
                 define_method "#{name}#{suffix}" do
-                  __send__("attribute#{suffix}", Mobility.normalize_locale_accessor(name))
+                  __send__("attribute#{suffix}", Mobility.normalize_currency_accessor(name))
                 end
               end
 
               define_method "restore_#{name}!" do
-                locale_accessor = Mobility.normalize_locale_accessor(name)
-                if attribute_changed?(locale_accessor)
-                  __send__("#{name}=", changed_attributes[locale_accessor])
+                currency_accessor = Mobility.normalize_currency_accessor(name)
+                if attribute_changed?(currency_accessor)
+                  __send__("#{name}=", changed_attributes[currency_accessor])
                 end
               end
             end
@@ -83,7 +83,7 @@ value of the translated attribute if passed to it.
           # Tracks which translated attributes have been changed, separate from
           # the default tracking of changes in ActiveModel/ActiveRecord Dirty.
           # This is required in order for the Mobility ActiveRecord Dirty
-          # plugin to correctly read the value of locale accessors like
+          # plugin to correctly read the value of currency accessors like
           # +title_en+ in dirty tracking.
           module ChangedAttributes
             private

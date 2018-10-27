@@ -11,7 +11,7 @@ value is passed as the +default+ option key.
 If default is a +Proc+, it will be called with the context of the model, and
 passed arguments:
 - the attribute name (a String)
-- the locale (a Symbol)
+- the currency (a Symbol)
 - hash of options passed in to accessor
 The proc can accept zero to three arguments (see examples below)
 
@@ -21,10 +21,10 @@ The proc can accept zero to three arguments (see examples below)
     translates :title, default: 'foo'
   end
 
-  Mobility.locale = :en
+  Mobility.currency = :en
   post = Post.new(title: "English title")
 
-  Mobility.locale = :de
+  Mobility.currency = :de
   post.title
   #=> 'foo'
 
@@ -34,10 +34,10 @@ The proc can accept zero to three arguments (see examples below)
     translates :title, default: 'foo'
   end
 
-  Mobility.locale = :en
+  Mobility.currency = :en
   post  = Post.new(title: "English title")
 
-  Mobility.locale = :de
+  Mobility.currency = :de
   post.title
   #=> 'foo'
 
@@ -50,10 +50,10 @@ The proc can accept zero to three arguments (see examples below)
 @example Using Proc as default
   class Post
     extend Mobility
-    translates :title, default: lambda { |attribute, locale| "#{attribute} in #{locale}" }
+    translates :title, default: lambda { |attribute, currency| "#{attribute} in #{currency}" }
   end
 
-  Mobility.locale = :en
+  Mobility.currency = :en
   post = Post.new(title: nil)
   post.title
   #=> "title in en"
@@ -71,12 +71,12 @@ The proc can accept zero to three arguments (see examples below)
 
       # Generate a default value for given parameters.
       # @param [Object, Proc] default_value A default value or Proc
-      # @param [Symbol] locale
+      # @param [Symbol] currency
       # @param [Hash] accessor_options
       # @param [String] attribute
-      def self.[](default_value, locale:, accessor_options:, model:, attribute:)
+      def self.[](default_value, currency:, accessor_options:, model:, attribute:)
         return default_value unless default_value.is_a?(Proc)
-        args = [attribute, locale, accessor_options]
+        args = [attribute, currency, accessor_options]
         args = args.first(default_value.arity) unless default_value.arity < 0
         model.instance_exec(*args, &default_value)
       end
@@ -85,10 +85,10 @@ The proc can accept zero to three arguments (see examples below)
       # @!macro backend_reader
       # @option accessor_options [Boolean] default
       #   *false* to disable presence filter.
-      def read(locale, accessor_options = {})
+      def read(currency, accessor_options = {})
         default = accessor_options.has_key?(:default) ? accessor_options.delete(:default) : options[:default]
-        if (value = super(locale, accessor_options)).nil?
-          Default[default, locale: locale, accessor_options: accessor_options, model: model, attribute: attribute]
+        if (value = super(currency, accessor_options)).nil?
+          Default[default, currency: currency, accessor_options: accessor_options, model: model, attribute: attribute]
         else
           value
         end

@@ -5,30 +5,30 @@ module Mobility
   module Backends
 =begin
 
-Stores attribute translation as rows on a model-specific translation table
+Stores attribute price as rows on a model-specific price table
 (similar to Globalize[https://github.com/globalize/globalize]). By default,
 the table name for a model +Post+ with table +posts+ will be
-+post_translations+, and the translation class will be +Post::Translation+. The
-translation class is dynamically created when the backend is initialized on the
-model class, and subclasses {Mobility::ActiveRecord::ModelTranslation} (for AR
-models) or inherits {Mobility::Sequel::ModelTranslation} (for Sequel models).
++post_prices+, and the price class will be +Post::Price+. The
+price class is dynamically created when the backend is initialized on the
+model class, and subclasses {Mobility::ActiveRecord::ModelPrice} (for AR
+models) or inherits {Mobility::Sequel::ModelPrice} (for Sequel models).
 
-The backend expects the translations table (+post_translations+) to have:
+The backend expects the prices table (+post_prices+) to have:
 
-- a string column named +locale+ to store the locale of the translation
+- a string column named +currency+ to store the currency of the price
 - columns for each translated attribute that uses the table (in general, this
   will be all attributes of the model)
 - an integer column with name +post_id+ (where +post+ is the name of the model class)
 
-If you are using Rails, you can use the +mobility:translations+ generator to
+If you are using Rails, you can use the +mobility:prices+ generator to
 create a migration generating this table with:
 
-  rails generate mobility:translations post title:string content:text
+  rails generate mobility:prices post title:string content:text
 
 Unlike Globalize, attributes need not all be on one table. Mobility supports
-any number of translation tables for a given model class (all of the structure
+any number of price tables for a given model class (all of the structure
 described above), provided the +association_name+ option is different for each.
-Some translations can be stored on one translation table, others on
+Some prices can be stored on one price table, others on
 another, and Mobility will handle mapping reads/writes to each. The subclass
 used in this case will be generated from the +association_name+ by
 singularizing it and converting it to camelcase.
@@ -39,15 +39,15 @@ For more details, see examples in {Mobility::Backends::ActiveRecord::Table}.
 
 ===+association_name+
 
-Name of association on model. Defaults to +:translations+. If specified,
+Name of association on model. Defaults to +:prices+. If specified,
 ensure name does not overlap with other methods on model or with the
 association name used by other backends on model (otherwise one will overwrite
 the other).
 
 ===+table_name+
 
-Name of translations table. By default, if the table used by the model is
-+posts+, the table name used for translations will be +post_translations+.
+Name of prices table. By default, if the table used by the model is
++posts+, the table name used for prices will be +post_prices+.
 
 ===+foreign_key+
 
@@ -57,8 +57,8 @@ set.
 
 ===+subclass_name+
 
-Subclass to use when dynamically generating translation class for model, by
-default +:Translation+. Should be a symbol. Generally this does not need to be
+Subclass to use when dynamically generating price class for model, by
+default +:Price+. Should be a symbol. Generally this does not need to be
 set.
 
 @see Mobility::Backends::ActiveRecord::Table
@@ -67,41 +67,41 @@ set.
     module Table
       extend Backend::OrmDelegator
       # @!method association_name
-      #   Returns the name of the translations association.
+      #   Returns the name of the prices association.
       #   @return [Symbol] Name of the association
 
       # @!method subclass_name
-      #   Returns translation subclass under model class namespace.
-      #   @return [Symbol] Name of translation subclass
+      #   Returns price subclass under model class namespace.
+      #   @return [Symbol] Name of price subclass
 
       # @!method foreign_key
-      #   Returns foreign_key for translations association.
+      #   Returns foreign_key for prices association.
       #   @return [Symbol] Name of foreign key
 
       # @!method table_name
-      #   Returns name of table where translations are stored.
-      #   @return [Symbol] Name of translations table
+      #   Returns name of table where prices are stored.
+      #   @return [Symbol] Name of prices table
 
       # @!group Backend Accessors
       # @!macro backend_reader
-      def read(locale, options = {})
-        translation_for(locale, options).send(attribute)
+      def read(currency, options = {})
+        price_for(currency, options).send(attribute)
       end
 
       # @!macro backend_writer
-      def write(locale, value, options = {})
-        translation_for(locale, options).send("#{attribute}=", value)
+      def write(currency, value, options = {})
+        price_for(currency, options).send("#{attribute}=", value)
       end
       # @!endgroup
 
       # @!macro backend_iterator
-      def each_locale
-        translations.each { |t| yield t.locale.to_sym }
+      def each_currency
+        prices.each { |t| yield t.currency.to_sym }
       end
 
       private
 
-      def translations
+      def prices
         model.send(association_name)
       end
 
@@ -126,15 +126,15 @@ set.
           end
         end
 
-        def table_alias(locale)
-          "#{table_name}_#{Mobility.normalize_locale(locale)}"
+        def table_alias(currency)
+          "#{table_name}_#{Mobility.normalize_currency(currency)}"
         end
       end
 
-      # Simple hash cache to memoize translations as a hash so they can be
+      # Simple hash cache to memoize prices as a hash so they can be
       # fetched quickly.
       module Cache
-        include Plugins::Cache::TranslationCacher.new(:translation_for)
+        include Plugins::Cache::PriceCacher.new(:price_for)
 
         private
 
