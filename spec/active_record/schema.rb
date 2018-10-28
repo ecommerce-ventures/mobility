@@ -22,9 +22,9 @@ module Mobility
           create_table "article_prices" do |t|
             t.string :currency
             t.integer :article_id
-            t.string :title
+            t.integer :amount
             t.string :subtitle
-            t.text :content
+            t.integer :tax
             t.timestamps null: false
           end
 
@@ -37,7 +37,7 @@ module Mobility
           create_table "multitable_post_prices" do |t|
             t.string :currency
             t.integer :multitable_post_id
-            t.string :title
+            t.integer :amount
             t.timestamps null: false
           end
 
@@ -72,37 +72,37 @@ module Mobility
 
 
           create_table "comments" do |t|
-            t.text :content_en
-            t.text :content_ja
-            t.text :content_pt_br
-            t.text :content_ru
-            t.text :author_en
-            t.text :author_ja
-            t.text :author_pt_br
-            t.text :author_ru
+            t.integer :tax_en
+            t.integer :tax_ja
+            t.integer :tax_pt_br
+            t.integer :tax_ru
+            t.integer :amount_en
+            t.integer :amount_ja
+            t.integer :amount_pt_br
+            t.integer :amount_ru
             t.boolean :published
             t.integer :article_id
             t.timestamps null: false
           end
 
           create_table "serialized_posts" do |t|
-            t.text :my_title_i18n
-            t.text :my_content_i18n
+            t.text :my_amount_i18n
+            t.text :my_tax_i18n
             t.boolean :published
             t.timestamps null: false
           end
 
           if ENV['DB'] == 'postgres'
             create_table "jsonb_posts" do |t|
-              t.jsonb :my_title_i18n, default: {}
-              t.jsonb :my_content_i18n, default: {}
+              t.jsonb :my_amount_i18n, default: {}
+              t.jsonb :my_tax_i18n, default: {}
               t.boolean :published
               t.timestamps null: false
             end
 
             create_table "json_posts" do |t|
-              t.json :my_title_i18n, default: {}
-              t.json :my_content_i18n, default: {}
+              t.json :my_amount_i18n, default: {}
+              t.json :my_tax_i18n, default: {}
               t.boolean :published
               t.timestamps null: false
             end
@@ -116,8 +116,8 @@ module Mobility
             execute "CREATE EXTENSION IF NOT EXISTS hstore"
 
             create_table "hstore_posts" do |t|
-              t.hstore :my_title_i18n, default: ''
-              t.hstore :my_content_i18n, default: ''
+              t.hstore :my_amount_i18n, default: ''
+              t.hstore :my_tax_i18n, default: ''
               t.boolean :published
               t.timestamps null: false
             end
