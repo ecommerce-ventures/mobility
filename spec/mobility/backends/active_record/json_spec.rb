@@ -8,7 +8,7 @@ describe "Mobility::Backends::ActiveRecord::Json", orm: :active_record, db: :pos
     JsonPost.extend Mobility
   end
 
-  column_options = { column_prefix: 'my_', column_suffix: '_i18n' }
+  column_options = { column_prefix: 'my_', column_suffix: '_prices' }
   column_affix = "#{column_options[:column_prefix]}%s#{column_options[:column_suffix]}"
   let(:default_options) { { presence: false, cache: false, **column_options } }
 
@@ -20,32 +20,32 @@ describe "Mobility::Backends::ActiveRecord::Json", orm: :active_record, db: :pos
   end
 
   context "with standard plugins applied" do
-    let(:backend) { post.mobility_backends[:title] }
+    let(:backend) { post.mobility_backends[:amount] }
 
-    before { JsonPost.translates :title, :content, backend: :json, **default_options }
+    before { JsonPost.translates :amount, :tax, backend: :json, **default_options }
     let(:post) { JsonPost.new }
 
     include_accessor_examples 'JsonPost'
     include_serialization_examples 'JsonPost', column_affix: column_affix
-    include_querying_examples 'JsonPost' unless ENV['RAILS_VERSION'] < '5.0'
-    include_validation_examples 'JsonPost'
+    #include_querying_examples 'JsonPost' unless ENV['RAILS_VERSION'] < '5.0'
+    #include_validation_examples 'JsonPost'
     include_dup_examples 'JsonPost'
     include_cache_key_examples 'JsonPost'
 
     describe "non-text values" do
       it "stores non-string types as-is when saving", rails_version_geq: '5.0' do
-        backend = post.mobility_backends[:title]
+        backend = post.mobility_backends[:amount]
         backend.write(:en, { foo: :bar } )
         post.save
-        expect(post[column_affix % "title"]).to eq({ "en" => { "foo" => "bar" }})
+        expect(post[column_affix % "amount"]).to eq({ "en" => { "foo" => "bar" }})
       end
     end
   end
 
   context "with dirty plugin applied" do
-    let(:backend) { post.mobility_backends[:title] }
+    let(:backend) { post.mobility_backends[:amount] }
 
-    before { JsonPost.translates :title, :content, backend: :json, **default_options }
+    before { JsonPost.translates :amount, :tax, backend: :json, **default_options }
     let(:post) { JsonPost.new }
 
     include_accessor_examples 'JsonPost'

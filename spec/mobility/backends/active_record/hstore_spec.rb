@@ -8,7 +8,7 @@ describe "Mobility::Backends::ActiveRecord::Hstore", orm: :active_record, db: :p
     HstorePost.extend Mobility
   end
 
-  column_options = { column_prefix: 'my_', column_suffix: '_i18n' }
+  column_options = { column_prefix: 'my_', column_suffix: '_prices' }
   column_affix = "#{column_options[:column_prefix]}%s#{column_options[:column_suffix]}"
   let(:default_options) { { presence: false, cache: false, **column_options } }
 

@@ -4,7 +4,7 @@ describe "Mobility::Backends::Sequel::Serialized", orm: :sequel do
   require "mobility/backends/sequel/serialized"
   extend Helpers::Sequel
 
-  column_options = { column_prefix: 'my_', column_suffix: '_i18n' }
+  column_options = { column_prefix: 'my_', column_suffix: '_prices' }
   column_affix = "#{column_options[:column_prefix]}%s#{column_options[:column_suffix]}"
   let(:default_options) { { presence: false, **column_options } }
 

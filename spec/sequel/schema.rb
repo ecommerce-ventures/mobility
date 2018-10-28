@@ -97,8 +97,8 @@ module Mobility
 
           DB.create_table? :serialized_posts do
             primary_key :id
-            String      :my_title_i18n,   size: 65535
-            String      :my_content_i18n, size: 65535
+            String      :my_title_prices,   size: 65535
+            String      :my_content_prices, size: 65535
             TrueClass   :published
             DateTime    :created_at,                   allow_null: false
             DateTime    :updated_at,                   allow_null: false
@@ -107,8 +107,8 @@ module Mobility
           if ENV['DB'] == 'postgres'
             DB.create_table? :jsonb_posts do
               primary_key :id
-              jsonb       :my_title_i18n,   default: '{}', allow_null: false
-              jsonb       :my_content_i18n, default: '{}', allow_null: false
+              jsonb       :my_title_prices,   default: '{}', allow_null: false
+              jsonb       :my_content_prices, default: '{}', allow_null: false
               TrueClass   :published
               DateTime    :created_at,                     allow_null: false
               DateTime    :updated_at,                     allow_null: false
@@ -116,8 +116,8 @@ module Mobility
 
             DB.create_table? :json_posts do
               primary_key :id
-              json        :my_title_i18n,   default: '{}', allow_null: false
-              json        :my_content_i18n, default: '{}', allow_null: false
+              json        :my_title_prices,   default: '{}', allow_null: false
+              json        :my_content_prices, default: '{}', allow_null: false
               TrueClass   :published
               DateTime    :created_at,                     allow_null: false
               DateTime    :updated_at,                     allow_null: false
@@ -134,8 +134,8 @@ module Mobility
             DB.run "CREATE EXTENSION IF NOT EXISTS hstore"
             DB.create_table? :hstore_posts do
               primary_key :id
-              hstore      :my_title_i18n, default: '',   allow_null: false
-              hstore      :my_content_i18n, default: '', allow_null: false
+              hstore      :my_title_prices, default: '',   allow_null: false
+              hstore      :my_content_prices, default: '', allow_null: false
               TrueClass   :published
               DateTime    :created_at,                   allow_null: false
               DateTime    :updated_at,                   allow_null: false

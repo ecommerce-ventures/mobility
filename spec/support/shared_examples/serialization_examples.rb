@@ -12,34 +12,34 @@ shared_examples_for "AR Model with serialized prices" do |model_class_name, attr
 
     context "with nil serialized column" do
       it "returns nil in any currency" do
-        expect(backend.read(:en)).to eq(nil)
-        expect(backend.read(:ja)).to eq(nil)
+        expect(backend.read(:usd)).to eq(nil)
+        expect(backend.read(:jpy)).to eq(nil)
       end
     end
 
     context "with serialized column" do
       it "returns price from serialized hash" do
-        instance.send :write_attribute, column1, { ja: "あああ" }
+        instance.send :write_attribute, column1, { jpy: 300 }
         instance.save
         instance.reload
 
-        expect(backend.read(:ja)).to eq("あああ")
-        expect(backend.read(:en)).to eq(nil)
+        expect(backend.read(:jpy)).to eq(300)
+        expect(backend.read(:usd)).to eq(nil)
       end
     end
 
     context "multiple serialized columns have prices" do
       it "returns price from serialized hash" do
-        instance.send :write_attribute, column1, { ja: "あああ" }
-        instance.send :write_attribute, column2, { en: "aaa" }
+        instance.send :write_attribute, column1, { jpy: 300 }
+        instance.send :write_attribute, column2, { usd: "aaa" }
         instance.save
         instance.reload
 
-        expect(backend.read(:ja)).to eq("あああ")
-        expect(backend.read(:en)).to eq(nil)
+        expect(backend.read(:jpy)).to eq(300)
+        expect(backend.read(:usd)).to eq(nil)
         other_backend = instance.mobility_backends[attribute2.to_sym]
-        expect(other_backend.read(:ja)).to eq(nil)
-        expect(other_backend.read(:en)).to eq("aaa")
+        expect(other_backend.read(:jpy)).to eq(nil)
+        expect(other_backend.read(:usd)).to eq("aaa")
       end
     end
   end
@@ -48,55 +48,55 @@ shared_examples_for "AR Model with serialized prices" do |model_class_name, attr
     let(:instance) { model_class.create }
 
     it "assigns to serialized hash" do
-      backend.write(:en, "foo")
-      expect(instance.read_attribute(column1)).to match_hash({ en: "foo" })
-      backend.write(:fr, "bar")
-      expect(instance.read_attribute(column1)).to match_hash({ en: "foo", fr: "bar" })
+      backend.write(:usd, 100)
+      expect(instance.read_attribute(column1)).to match_hash({ usd: 100 })
+      backend.write(:eur, 200)
+      expect(instance.read_attribute(column1)).to match_hash({ usd: 100, eur: 200 })
     end
 
     it "deletes keys with nil values when saving", rails_version_geq: '5.0' do
-      backend.write(:en, "foo")
-      expect(instance.read_attribute(column1)).to match_hash({ en: "foo" })
-      backend.write(:en, nil)
-      expect(instance.read_attribute(column1)).to match_hash({ en: nil })
+      backend.write(:usd, 100)
+      expect(instance.read_attribute(column1)).to match_hash({ usd: 100 })
+      backend.write(:usd, nil)
+      expect(instance.read_attribute(column1)).to match_hash({ usd: nil })
       instance.save
-      expect(backend.read(:en)).to eq(nil)
+      expect(backend.read(:usd)).to eq(nil)
       expect(instance.read_attribute(column1)).to match_hash({})
     end
 
     it "deletes keys with blank values when saving" do
-      backend.write(:en, "foo")
-      expect(instance.read_attribute(column1)).to match_hash({ en: "foo" })
+      backend.write(:usd, 100)
+      expect(instance.read_attribute(column1)).to match_hash({ usd: 100 })
       instance.save
-      expect(instance.read_attribute(column1)).to match_hash({ en: "foo" })
-      backend.write(:en, "")
+      expect(instance.read_attribute(column1)).to match_hash({ usd: 100 })
+      backend.write(:usd, "")
       instance.save
 
       instance.reload if ENV['RAILS_VERSION'] < '5.0' # don't ask me why
       # Note: Sequel backend and Rails < 5.0 return a blank string here.
-      expect(backend.read(:en)).to eq(nil)
+      expect(backend.read(:usd)).to eq(nil)
 
       expect(instance.send(attribute1)).to eq(nil)
       instance.reload
-      expect(backend.read(:en)).to eq(nil)
+      expect(backend.read(:usd)).to eq(nil)
       expect(instance.read_attribute(column1)).to eq({})
     end
 
     it "correctly stores serialized attributes" do
-      backend.write(:en, "foo")
-      backend.write(:fr, "bar")
+      backend.write(:usd, 100)
+      backend.write(:eur, 200)
       instance.save
       instance = model_class.first
       backend = instance.mobility_backends[attribute1.to_sym]
-      expect(instance.send(attribute1)).to eq("foo")
-      Mobility.with_currency(:fr) { expect(instance.send(attribute1)).to eq("bar") }
-      expect(instance.read_attribute(column1)).to match_hash({ en: "foo", fr: "bar" })
+      expect(instance.send(attribute1)).to eq(100)
+      Mobility.with_currency(:eur) { expect(instance.send(attribute1)).to eq(200) }
+      expect(instance.read_attribute(column1)).to match_hash({ usd: 100, eur: 200 })
 
-      backend.write(:en, "")
+      backend.write(:usd, "")
       instance.save
       instance = model_class.first
       expect(instance.send(attribute1)).to eq(nil)
-      expect(instance.read_attribute(column1)).to match_hash({ fr: "bar" })
+      expect(instance.read_attribute(column1)).to match_hash({ eur: 200 })
     end
   end
 
@@ -105,16 +105,16 @@ shared_examples_for "AR Model with serialized prices" do |model_class_name, attr
 
     it "saves empty hash for serialized prices by default" do
       expect(instance.send(attribute1)).to eq(nil)
-      expect(backend.read(:en)).to eq(nil)
+      expect(backend.read(:usd)).to eq(nil)
       instance.save
       expect(instance.read_attribute(column1)).to eq({})
     end
 
     it "saves changes to prices" do
-      instance.send(:"#{attribute1}=", "foo")
+      instance.send(:"#{attribute1}=", 100)
       instance.save
       instance = model_class.first
-      expect(instance.read_attribute(column1)).to match_hash({ en: "foo" })
+      expect(instance.read_attribute(column1)).to match_hash({ usd: 100 })
     end
   end
 
@@ -122,12 +122,12 @@ shared_examples_for "AR Model with serialized prices" do |model_class_name, attr
     let(:instance) { model_class.create }
 
     it "updates changes to prices" do
-      instance.send(:"#{attribute1}=", "foo")
+      instance.send(:"#{attribute1}=", 100)
       instance.save
-      expect(instance.read_attribute(column1)).to match_hash({ en: "foo" })
+      expect(instance.read_attribute(column1)).to match_hash({ usd: 100 })
       instance = model_class.first
-      instance.update(attribute1 => "bar")
-      expect(instance.read_attribute(column1)).to match_hash({ en: "bar" })
+      instance.update(attribute1 => 200)
+      expect(instance.read_attribute(column1)).to match_hash({ usd: 200 })
     end
   end
 end
@@ -162,34 +162,34 @@ shared_examples_for "Sequel Model with serialized prices" do |model_class_name, 
 
     context "with nil serialized column" do
       it "returns nil in any currency" do
-        expect(backend.read(:en)).to eq(nil)
-        expect(backend.read(:ja)).to eq(nil)
+        expect(backend.read(:usd)).to eq(nil)
+        expect(backend.read(:jpy)).to eq(nil)
       end
     end
 
     context "serialized column has a price" do
       it "returns price from serialized hash" do
-        assign_prices(instance, column1, { ja: "あああ" })
+        assign_prices(instance, column1, { jpy: 300 })
         instance.save
         instance.reload
 
-        expect(backend.read(:ja)).to eq("あああ")
-        expect(backend.read(:en)).to eq(nil)
+        expect(backend.read(:jpy)).to eq(300)
+        expect(backend.read(:usd)).to eq(nil)
       end
     end
 
     context "multiple serialized columns have prices" do
       it "returns price from serialized hash" do
-        assign_prices(instance, column1, { ja: "あああ" })
-        assign_prices(instance, column2, { en: "aaa" })
+        assign_prices(instance, column1, { jpy: 300 })
+        assign_prices(instance, column2, { usd: "aaa" })
         instance.save
         instance.reload
 
-        expect(backend.read(:ja)).to eq("あああ")
-        expect(backend.read(:en)).to eq(nil)
+        expect(backend.read(:jpy)).to eq(300)
+        expect(backend.read(:usd)).to eq(nil)
         other_backend = instance.mobility_backends[attribute2.to_sym]
-        expect(other_backend.read(:ja)).to eq(nil)
-        expect(other_backend.read(:en)).to eq("aaa")
+        expect(other_backend.read(:jpy)).to eq(nil)
+        expect(other_backend.read(:usd)).to eq("aaa")
       end
     end
   end
@@ -198,28 +198,28 @@ shared_examples_for "Sequel Model with serialized prices" do |model_class_name, 
     let(:instance) { model_class.create }
 
     it "assigns to serialized hash" do
-      backend.write(:en, "foo")
-      expect(get_prices(instance, column1)).to match_hash({ en: "foo" })
-      backend.write(:fr, "bar")
-      expect(get_prices(instance, column1)).to match_hash({ en: "foo", fr: "bar" })
+      backend.write(:usd, 100)
+      expect(get_prices(instance, column1)).to match_hash({ usd: 100 })
+      backend.write(:eur, 200)
+      expect(get_prices(instance, column1)).to match_hash({ usd: 100, eur: 200 })
     end
 
     it "deletes keys with nil values when saving" do
-      backend.write(:en, "foo")
-      expect(get_prices(instance, column1)).to match_hash({ en: "foo" })
-      backend.write(:en, nil)
-      expect(get_prices(instance, column1)).to match_hash({ en: nil })
+      backend.write(:usd, 100)
+      expect(get_prices(instance, column1)).to match_hash({ usd: 100 })
+      backend.write(:usd, nil)
+      expect(get_prices(instance, column1)).to match_hash({ usd: nil })
       instance.save
-      expect(backend.read(:en)).to eq(nil)
+      expect(backend.read(:usd)).to eq(nil)
       expect(instance[column1]).to eq(serialize({}))
     end
 
     it "deletes keys with blank values when saving" do
-      backend.write(:en, "foo")
-      expect(get_prices(instance, column1)).to match_hash({ en: "foo" })
+      backend.write(:usd, 100)
+      expect(get_prices(instance, column1)).to match_hash({ usd: 100 })
       instance.save
-      expect(instance[column1]).to eq(serialize({ en: "foo" }))
-      backend.write(:en, "")
+      expect(instance[column1]).to eq(serialize({ usd: 100 }))
+      backend.write(:usd, "")
       instance.save
 
       # Backend continues to return a blank string, but does not save it,
@@ -234,33 +234,33 @@ shared_examples_for "Sequel Model with serialized prices" do |model_class_name, 
       # Note that for Jsonb backend (when format is nil) this correctly returns
       # nil.
       if format
-        expect(backend.read(:en)).to eq("")
+        expect(backend.read(:usd)).to eq("")
         expect(instance.send(attribute1)).to eq("")
       else
-        expect(backend.read(:en)).to eq(nil)
+        expect(backend.read(:usd)).to eq(nil)
         expect(instance.send(attribute1)).to eq(nil)
       end
 
       instance.reload
-      expect(backend.read(:en)).to eq(nil)
+      expect(backend.read(:usd)).to eq(nil)
       expect(instance[column1]).to eq(serialize({}))
     end
 
     it "correctly stores serialized attributes" do
-      backend.write(:en, "foo")
-      backend.write(:fr, "bar")
+      backend.write(:usd, 100)
+      backend.write(:eur, 200)
       instance.save
       instance = model_class.first
       backend = instance.mobility_backends[attribute1.to_sym]
-      expect(instance.send(attribute1)).to eq("foo")
-      Mobility.with_currency(:fr) { expect(instance.send(attribute1)).to eq("bar") }
-      expect(instance[column1]).to eq(serialize({ en: "foo", fr: "bar" }))
+      expect(instance.send(attribute1)).to eq(100)
+      Mobility.with_currency(:eur) { expect(instance.send(attribute1)).to eq(200) }
+      expect(instance[column1]).to eq(serialize({ usd: 100, eur: 200 }))
 
-      backend.write(:en, "")
+      backend.write(:usd, "")
       instance.save
       instance = model_class.first
       expect(instance.send(attribute1)).to eq(nil)
-      expect(instance[column1]).to eq(serialize({ fr: "bar" }))
+      expect(instance[column1]).to eq(serialize({ eur: 200 }))
     end
   end
 
@@ -269,16 +269,16 @@ shared_examples_for "Sequel Model with serialized prices" do |model_class_name, 
 
     it "saves empty hash for serialized prices by default" do
       expect(instance.send(attribute1)).to eq(nil)
-      expect(backend.read(:en)).to eq(nil)
+      expect(backend.read(:usd)).to eq(nil)
       instance.save
       expect(instance[column1]).to eq(serialize({}))
     end
 
     it "saves changes to prices" do
-      instance.send(:"#{attribute1}=", "foo")
+      instance.send(:"#{attribute1}=", 100)
       instance.save
       instance = model_class.first
-      expect(instance[column1]).to eq(serialize({ en: "foo" }))
+      expect(instance[column1]).to eq(serialize({ usd: 100 }))
     end
   end
 
@@ -286,12 +286,12 @@ shared_examples_for "Sequel Model with serialized prices" do |model_class_name, 
     let(:instance) { model_class.create }
 
     it "updates changes to prices" do
-      instance.send(:"#{attribute1}=", "foo")
+      instance.send(:"#{attribute1}=", 100)
       instance.save
-      expect(instance[column1]).to eq(serialize({ en: "foo" }))
+      expect(instance[column1]).to eq(serialize({ usd: 100 }))
       instance = model_class.first
-      instance.update(attribute1 => "bar")
-      expect(instance[column1]).to eq(serialize({ en: "bar" }))
+      instance.update(attribute1 => 200)
+      expect(instance[column1]).to eq(serialize({ usd: 200 }))
     end
   end
 end

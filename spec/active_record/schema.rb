@@ -86,23 +86,23 @@ module Mobility
           end
 
           create_table "serialized_posts" do |t|
-            t.text :my_amount_i18n
-            t.text :my_tax_i18n
+            t.text :my_amount_prices
+            t.text :my_tax_prices
             t.boolean :published
             t.timestamps null: false
           end
 
           if ENV['DB'] == 'postgres'
             create_table "jsonb_posts" do |t|
-              t.jsonb :my_amount_i18n, default: {}
-              t.jsonb :my_tax_i18n, default: {}
+              t.jsonb :my_amount_prices, default: {}
+              t.jsonb :my_tax_prices, default: {}
               t.boolean :published
               t.timestamps null: false
             end
 
             create_table "json_posts" do |t|
-              t.json :my_amount_i18n, default: {}
-              t.json :my_tax_i18n, default: {}
+              t.json :my_amount_prices, default: {}
+              t.json :my_tax_prices, default: {}
               t.boolean :published
               t.timestamps null: false
             end
@@ -116,8 +116,8 @@ module Mobility
             execute "CREATE EXTENSION IF NOT EXISTS hstore"
 
             create_table "hstore_posts" do |t|
-              t.hstore :my_amount_i18n, default: ''
-              t.hstore :my_tax_i18n, default: ''
+              t.hstore :my_amount_prices, default: ''
+              t.hstore :my_tax_prices, default: ''
               t.boolean :published
               t.timestamps null: false
             end
