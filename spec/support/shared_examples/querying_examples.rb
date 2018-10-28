@@ -437,7 +437,7 @@ shared_examples_for "AR Model with translated scope" do |model_class_name, a1=:a
       end
 
       describe "not equal" do
-        it "handles (a NOT EQ 'foo')" do
+        it "handles (a NOT EQ 100)" do
           expect(query { __send__(a1).not_eq(100) }).to match_array([i[4]])
         end
 

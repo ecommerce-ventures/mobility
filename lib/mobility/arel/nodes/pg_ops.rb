@@ -36,9 +36,13 @@ module Mobility
         end
       end
 
-      class Jsonb  < JsonbDashDoubleArrow
+      class Jsonb  < JsonbDashArrow
         def to_dash_arrow
           JsonbDashArrow.new left, right
+        end
+
+        def to_dash_double_arrow
+          JsonbDashDoubleArrow.new left, right
         end
 
         def to_question
@@ -51,10 +55,8 @@ module Mobility
             to_question.not
           when Integer, Array, ::Hash
             to_dash_arrow.eq other.to_json
-          when Jsonb
-            to_dash_arrow.eq other.to_dash_arrow
-          when JsonbDashArrow
-            to_dash_arrow.eq other
+          when String
+            to_dash_double_arrow.eq other
           else
             super
           end

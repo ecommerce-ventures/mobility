@@ -93,19 +93,6 @@ shared_examples_for "AR Model validation" do |model_class_name, attribute1=:amou
       end
     end
 
-    context "case insensitive validation on translated attribute" do
-      let(:model_class) do
-        model_class_name.constantize.tap do |klass|
-          klass.class_eval { validates attribute1, uniqueness: { case_sensitive: false } }
-        end
-      end
-
-      it "is invalid if other record has same attribute LOWER(value)" do
-        model_class.create(published: true, attribute1 => "Foo")
-        expect(model_class.new(published: true, attribute1 => "foO")).not_to be_valid
-      end
-    end
-
     context "uniqueness validation on untranslated attribute" do
       let(:model_class) do
         model_class_name.constantize.tap do |klass|
