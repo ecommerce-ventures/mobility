@@ -147,6 +147,7 @@ shared_examples_for "AR Model with translated scope" do |model_class_name, a1=:a
       end
 
       it "returns records with matching translated attribute values" do
+        skip "Not supported by #{backend_name}" if [:jsonb].include?(backend_name)
         expect(query_scope.where(a1 => [100, 300])).to match_array([@instance1, @instance3])
         expect(query_scope.where(a1 => [100, nil])).to match_array([@instance1, @instance4, @ja_instance1])
       end
@@ -209,6 +210,7 @@ shared_examples_for "AR Model with translated scope" do |model_class_name, a1=:a
     end
 
     it "works with array of values" do
+      skip "Not supported by #{backend_name}" if [:jsonb].include?(backend_name)
       instance = model_class.create(a1 => 300)
       aggregate_failures do
         expect(query_scope.where.not(a1 => [100, 200])).to match_array([instance])
@@ -438,6 +440,7 @@ shared_examples_for "AR Model with translated scope" do |model_class_name, a1=:a
 
       describe "not equal" do
         it "handles (a NOT EQ 100)" do
+          skip "Not supported by #{backend_name}" if [:jsonb].include?(backend_name)
           expect(query { __send__(a1).not_eq(100) }).to match_array([i[4]])
         end
 

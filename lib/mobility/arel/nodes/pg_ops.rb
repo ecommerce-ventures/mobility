@@ -73,7 +73,11 @@ module Mobility
         end
       end
 
-      class Json < JsonDashDoubleArrow; end
+      class Json < JsonDashDoubleArrow
+        def eq other
+          other.nil? ? super : super(other.to_json)
+        end
+      end
 
       class JsonContainer < Json
         def initialize column, currency, attr
