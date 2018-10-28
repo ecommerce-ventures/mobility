@@ -12,10 +12,10 @@ describe Mobility::Plugins::Fallbacks do
           Mobility.enforce_available_currencies!(currency)
           return "bar" if options[:bar]
           {
-            "title" => {
-              :'de-DE' => "foo",
-              :ja => "フー",
-              :'pt' => ""
+            "amount" => {
+              :eur => 100,
+              :jpy => 200,
+              :cad => ""
             }
           }[attribute][currency]
         end
@@ -23,50 +23,51 @@ describe Mobility::Plugins::Fallbacks do
       Class.new(backend_subclass).include(described_class.new(fallbacks))
     end
     let(:object) { (stub_const 'MobilityModel', Class.new).include(Mobility).new }
-    subject { backend_class.new(object, "title") }
+    subject { backend_class.new(object, "amount") }
 
     context "fallbacks is a hash" do
-      let(:fallbacks) { { :'en-US' => 'de-DE', :pt => 'de-DE' } }
+      let(:fallbacks) { { usd: 'eur', cad: 'eur' } }
 
       it "returns value when value is not nil" do
-        expect(subject.read(:ja)).to eq("フー")
+        subject.read(:jpy)
+        expect(subject.read(:jpy)).to eq(200)
       end
 
       it "falls through to fallback currency when value is nil" do
-        expect(subject.read(:"en-US")).to eq("foo")
+        expect(subject.read(:usd)).to eq(100)
       end
 
       it "falls through to fallback currency when value is blank" do
-        expect(subject.read(:pt)).to eq("foo")
+        expect(subject.read(:cad)).to eq(100)
       end
 
       it "returns nil when no fallback is found" do
-        expect(subject.read(:fr)).to eq(nil)
+        expect(subject.read(:gbp)).to eq(nil)
       end
 
       it "returns nil when fallback: false option is passed" do
-        expect(subject.read(:"en-US", fallback: false)).to eq(nil)
+        expect(subject.read(:usd, fallback: false)).to eq(nil)
       end
 
       it "falls through to fallback currency when fallback: true option is passed" do
-        expect(subject.read(:"en-US", fallback: true)).to eq("foo")
+        expect(subject.read(:usd, fallback: true)).to eq(100)
       end
 
       it "uses currency passed in as value of fallback option when present" do
-        expect(subject.read(:"en-US", fallback: :ja)).to eq("フー")
+        expect(subject.read(:usd, fallback: :jpy)).to eq(200)
       end
 
       it "uses array of currencies passed in as value of fallback options when present" do
-        expect(subject.read(:"en-US", fallback: [:pl, :'de-DE'])).to eq("foo")
+        expect(subject.read(:usd, fallback: [:gbp, :eur])).to eq(100)
       end
 
       it "passes options to getter in fallback currency" do
-        expect(subject.read(:'en-US', bar: true)).to eq("bar")
+        expect(subject.read(:usd, bar: true)).to eq("bar")
       end
 
       it "does not modify options passed in" do
         options = { fallback: false }
-        subject.read(:"en-US", options)
+        subject.read(:usd, options)
         expect(options).to eq({ fallback: false })
       end
     end
@@ -76,8 +77,8 @@ describe Mobility::Plugins::Fallbacks do
 
       it "uses default fallbacks" do
         original_default_currency = Mobility.default_currency
-        Mobility.default_currency = :ja
-        expect(subject.read(:"en-US")).to eq(value)
+        Mobility.default_currency = :jpy
+        expect(subject.read(:usd)).to eq(200)
         Mobility.default_currency = original_default_currency
       end
     end
@@ -87,23 +88,23 @@ describe Mobility::Plugins::Fallbacks do
 
       it "does not use fallbacks when fallback option is false or nil" do
         original_default_currency = Mobility.default_currency
-        Mobility.default_currency = :ja
-        expect(subject.read(:"en-US")).to eq(nil)
+        Mobility.default_currency = :jpy
+        expect(subject.read(:usd)).to eq(nil)
         Mobility.default_currency = original_default_currency
-        expect(subject.read(:"en-US", fallback: false)).to eq(nil)
+        expect(subject.read(:usd, fallback: false)).to eq(nil)
         Mobility.default_currency = original_default_currency
       end
 
       it "uses currency passed in as value of fallback option when present" do
-        expect(subject.read(:"en-US", fallback: :ja)).to eq("フー")
+        expect(subject.read(:usd, fallback: :jpy)).to eq(200)
       end
 
       it "uses array of currencies passed in as value of fallback options when present" do
-        expect(subject.read(:"en-US", fallback: [:pl, :'de-DE'])).to eq("foo")
+        expect(subject.read(:usd, fallback: [:gbp, :eur])).to eq(100)
       end
 
       it "does not use fallbacks when fallback: true option is passed" do
-        expect(subject.read(:"en-US", fallback: true)).to eq(nil)
+        expect(subject.read(:usd, fallback: true)).to eq(nil)
       end
     end
   end

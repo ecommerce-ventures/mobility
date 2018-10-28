@@ -46,15 +46,14 @@ model class is generated.
         private
 
         def define_method_missing(mod, *names)
-          method_name_regex = /\A(#{names.join('|')})_([a-z]{2}(_[a-z]{2})?)(=?|\??)\z/.freeze
+          method_name_regex = /\A(#{names.join('|')})_([a-z]{3})(=?|\??)\z/.freeze
 
           mod.class_eval do
             define_method :method_missing do |method_name, *arguments, **options, &block|
               if method_name =~ method_name_regex
                 attribute = $1.to_sym
-                currency, suffix = $2.split('_')
-                currency = "#{currency}-#{suffix.upcase}" if suffix
-                public_send("#{attribute}#{$4}", *arguments, **options, currency: currency.to_sym)
+                currency = $2
+                public_send("#{attribute}#{$3}", *arguments, **options, currency: currency.to_sym)
               else
                 super(method_name, *arguments, &block)
               end

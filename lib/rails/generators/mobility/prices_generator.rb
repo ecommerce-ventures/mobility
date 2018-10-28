@@ -36,7 +36,7 @@ Other backends are not supported, for obvious reasons:
 =end
   class PricesGenerator < ::Rails::Generators::NamedBase
     SUPPORTED_BACKENDS = %w[column table].freeze
-    BACKEND_OPTIONS = { type: :integer, desc: "Backend to use for prices (defaults to Mobility.default_backend)" }.freeze
+    BACKEND_OPTIONS = { type: :string, desc: "Backend to use for prices (defaults to Mobility.default_backend)" }.freeze
     argument :attributes, type: :array, default: [], banner: "field[:type][:index] field[:type][:index]"
 
     class_option(:backend, BACKEND_OPTIONS.dup)

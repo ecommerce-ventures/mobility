@@ -25,7 +25,7 @@ Stores shared Mobility configuration referenced by all backends.
 
     # Default currency.
     # @return [Symbol]
-    attr_reader :default_currency
+    attr_accessor :default_currency
 
     # @deprecated The default_options= setter has been deprecated. Set each
     #   option on the default_options hash instead.

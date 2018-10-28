@@ -21,68 +21,68 @@ describe Mobility::Plugins::Presence do
 
     describe "#read" do
       it "passes through present values unchanged" do
-        expect(backend_double).to receive(:read).once.with(:fr, {}).and_return("foo")
-        expect(backend.read(:fr)).to eq("foo")
+        expect(backend_double).to receive(:read).once.with(:eur, {}).and_return("foo")
+        expect(backend.read(:eur)).to eq("foo")
       end
 
       it "converts blank strings to nil" do
-        expect(backend_double).to receive(:read).once.with(:fr, {}).and_return("")
-        expect(backend.read(:fr)).to eq(nil)
+        expect(backend_double).to receive(:read).once.with(:eur, {}).and_return("")
+        expect(backend.read(:eur)).to eq(nil)
       end
 
       it "passes through nil values unchanged" do
-        expect(backend_double).to receive(:read).once.with(:fr, {}).and_return(nil)
-        expect(backend.read(:fr)).to eq(nil)
+        expect(backend_double).to receive(:read).once.with(:eur, {}).and_return(nil)
+        expect(backend.read(:eur)).to eq(nil)
       end
 
       it "passes through false values unchanged" do
-        expect(backend_double).to receive(:read).once.with(:fr, {}).and_return(false)
-        expect(backend.read(:fr)).to eq(false)
+        expect(backend_double).to receive(:read).once.with(:eur, {}).and_return(false)
+        expect(backend.read(:eur)).to eq(false)
       end
 
       it "does not convert blank string to nil if presence: false passed as option" do
-        expect(backend_double).to receive(:read).once.with(:fr, {}).and_return("")
-        expect(backend.read(:fr, presence: false)).to eq("")
+        expect(backend_double).to receive(:read).once.with(:eur, {}).and_return("")
+        expect(backend.read(:eur, presence: false)).to eq("")
       end
 
       it "does not modify options passed in" do
         options = { presence: false }
-        expect(backend_double).to receive(:read).once.with(:fr, {}).and_return("")
-        backend.read(:fr, options)
+        expect(backend_double).to receive(:read).once.with(:eur, {}).and_return("")
+        backend.read(:eur, options)
         expect(options).to eq({ presence: false })
       end
     end
 
     describe "#write" do
       it "passes through present values unchanged" do
-        expect(backend_double).to receive(:write).once.with(:fr, "foo", {}).and_return("foo")
-        expect(backend.write(:fr, "foo")).to eq("foo")
+        expect(backend_double).to receive(:write).once.with(:eur, "foo", {}).and_return("foo")
+        expect(backend.write(:eur, "foo")).to eq("foo")
       end
 
       it "converts blank strings to nil" do
-        expect(backend_double).to receive(:write).once.with(:fr, nil, {}).and_return(nil)
-        expect(backend.write(:fr, "")).to eq(nil)
+        expect(backend_double).to receive(:write).once.with(:eur, nil, {}).and_return(nil)
+        expect(backend.write(:eur, "")).to eq(nil)
       end
 
       it "passes through nil values unchanged" do
-        expect(backend_double).to receive(:write).once.with(:fr, nil, {}).and_return(nil)
-        expect(backend.write(:fr, nil)).to eq(nil)
+        expect(backend_double).to receive(:write).once.with(:eur, nil, {}).and_return(nil)
+        expect(backend.write(:eur, nil)).to eq(nil)
       end
 
       it "passes through false values unchanged" do
-        expect(backend_double).to receive(:write).once.with(:fr, false, {}).and_return(false)
-        expect(backend.write(:fr, false)).to eq(false)
+        expect(backend_double).to receive(:write).once.with(:eur, false, {}).and_return(false)
+        expect(backend.write(:eur, false)).to eq(false)
       end
 
       it "does not convert blank string to nil if presence: false passed as option" do
-        expect(backend_double).to receive(:write).once.with(:fr, "", {}).and_return("")
-        expect(backend.write(:fr, "", presence: false)).to eq("")
+        expect(backend_double).to receive(:write).once.with(:eur, "", {}).and_return("")
+        expect(backend.write(:eur, "", presence: false)).to eq("")
       end
 
       it "does not modify options passed in" do
         options = { presence: false }
-        expect(backend_double).to receive(:write).once.with(:fr, "foo", {})
-        backend.write(:fr, "foo", options)
+        expect(backend_double).to receive(:write).once.with(:eur, "foo", {})
+        backend.write(:eur, "foo", options)
         expect(options).to eq({ presence: false })
       end
     end

@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 require 'request_store'
+require 'money'
 require 'mobility/version'
 
 =begin
@@ -176,6 +177,10 @@ module Mobility
       define_method method_name do
         config.public_send(method_name)
       end
+    end
+
+    def default_currency=(currency)
+      config.default_currency = currency
     end
 
     # Configure Mobility

@@ -18,47 +18,47 @@ The proc can accept zero to three arguments (see examples below)
 @example With default enabled (falls through to default value)
   class Post
     extend Mobility
-    translates :title, default: 'foo'
+    translates :amount, default: 100
   end
 
   Mobility.currency = :en
-  post = Post.new(title: "English title")
+  post = Post.new(amount: "English amount")
 
   Mobility.currency = :de
-  post.title
-  #=> 'foo'
+  post.amount
+  #=> 100
 
 @example Overriding default with reader option
   class Post
     extend Mobility
-    translates :title, default: 'foo'
+    translates :amount, default: 100
   end
 
   Mobility.currency = :en
-  post  = Post.new(title: "English title")
+  post  = Post.new(amount: "English amount")
 
   Mobility.currency = :de
-  post.title
-  #=> 'foo'
+  post.amount
+  #=> 100
 
-  post.title(default: 'bar')
+  post.amount(default: 'bar')
   #=> 'bar'
 
-  post.title(default: nil)
+  post.amount(default: nil)
   #=> nil
 
 @example Using Proc as default
   class Post
     extend Mobility
-    translates :title, default: lambda { |attribute, currency| "#{attribute} in #{currency}" }
+    translates :amount, default: lambda { |attribute, currency| "#{attribute} in #{currency}" }
   end
 
   Mobility.currency = :en
-  post = Post.new(title: nil)
-  post.title
-  #=> "title in en"
+  post = Post.new(amount: nil)
+  post.amount
+  #=> "amount in en"
 
-  post.title(default: lambda { self.class.name.to_s })
+  post.amount(default: lambda { self.class.name.to_s })
   #=> "Post"
 =end
     module Default

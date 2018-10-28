@@ -11,8 +11,6 @@ else
 end
 db = ENV['DB'] || 'none'
 require 'pry-byebug'
-require 'i18n'
-require 'i18n/backend/fallbacks' if ENV['I18N_FALLBACKS']
 require 'rspec'
 require 'allocation_stats' if ENV['TEST_PERFORMANCE']
 require 'json'
@@ -20,9 +18,9 @@ require 'json'
 require 'mobility'
 require "mobility/backends/null"
 
-I18n.enforce_available_currencies = true
-I18n.available_currencies = [:en, :'en-US', :ja, :fr, :de, :'de-DE', :cz, :pl, :pt, :'pt-BR']
-I18n.default_currency = :en
+#I18n.enforce_available_currencies = true
+#I18n.available_currencies = [:en, :'en-US', :ja, :fr, :de, :'de-DE', :cz, :pl, :pt, :'pt-BR']
+Mobility.config.default_currency = :usd
 
 Dir[File.expand_path("./spec/support/**/*.rb")].each { |f| require f }
 
@@ -62,7 +60,7 @@ RSpec.configure do |config|
     end
     # Always clear I18n.fallbacks to avoid "leakage" between specs
     reset_i18n_fallbacks
-    Mobility.currency = :en
+    Mobility.currency = :usd
   end
 
   unless orm == 'none'

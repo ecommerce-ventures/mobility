@@ -29,92 +29,92 @@ describe "Mobility::Plugins::ActiveModel::Dirty", orm: :active_record do
     }
     Article.include ActiveModel::Dirty
     Article.extend Mobility
-    Article.translates :title, backend: backend_class, dirty: true, cache: false
+    Article.translates :amount, backend: backend_class, dirty: true, cache: false
   end
 
   describe "tracking changes" do
     it "tracks changes in one currency" do
-      Mobility.currency = :'pt-BR'
+      Mobility.currency = :gbp
       article = Article.new
 
       aggregate_failures "before change" do
-        expect(article.title).to eq(nil)
+        expect(article.amount).to eq(nil)
         expect(article.changed?).to eq(false)
         expect(article.changed).to eq([])
         expect(article.changes).to eq({})
       end
 
       aggregate_failures "set same value" do
-        article.title = nil
-        expect(article.title).to eq(nil)
+        article.amount = nil
+        expect(article.amount).to eq(nil)
         expect(article.changed?).to eq(false)
         expect(article.changed).to eq([])
         expect(article.changes).to eq({})
       end
 
-      article.title = "foo"
+      article.amount = 100
 
       aggregate_failures "after change" do
-        expect(article.title).to eq("foo")
+        expect(article.amount).to eq(100)
         expect(article.changed?).to eq(true)
-        expect(article.changed).to eq(["title_pt_br"])
-        expect(article.changes).to eq({ "title_pt_br" => [nil, "foo"] })
+        expect(article.changed).to eq(["amount_gbp"])
+        expect(article.changes).to eq({ "amount_gbp" => [nil, 100] })
       end
     end
 
     it "tracks previous changes in one currency" do
       article = Article.new
-      article.title = "foo"
+      article.amount = 100
       article.save
 
       aggregate_failures do
-        article.title = "bar"
+        article.amount = 200
         expect(article.changed?).to eq(true)
 
         article.save
 
         expect(article.changed?).to eq(false)
-        expect(article.previous_changes).to eq({ "title_en" => ["foo", "bar"]})
+        expect(article.previous_changes).to eq({ "amount_usd" => [100, 200]})
       end
     end
 
     it "tracks changes in multiple currencies" do
       article = Article.new
 
-      expect(article.title).to eq(nil)
+      expect(article.amount).to eq(nil)
 
-      aggregate_failures "change in English currency" do
-        article.title = "English title"
+      aggregate_failures "change in USD currency" do
+        article.amount = 300
 
         expect(article.changed?).to eq(true)
-        expect(article.changed).to eq(["title_en"])
-        expect(article.changes).to eq({ "title_en" => [nil, "English title"] })
+        expect(article.changed).to eq(["amount_usd"])
+        expect(article.changes).to eq({ "amount_usd" => [nil, 300] })
       end
 
-      aggregate_failures "change in French currency" do
-        Mobility.currency = :fr
+      aggregate_failures "change in EUR currency" do
+        Mobility.currency = :eur
 
-        article.title = "Titre en Francais"
+        article.amount = 400
         expect(article.changed?).to eq(true)
-        expect(article.changed).to match_array(["title_en", "title_fr"])
-        expect(article.changes).to eq({ "title_en" => [nil, "English title"], "title_fr" => [nil, "Titre en Francais"] })
+        expect(article.changed).to match_array(["amount_usd", "amount_eur"])
+        expect(article.changes).to eq({ "amount_usd" => [nil, 300], "amount_eur" => [nil, 400] })
       end
     end
 
     it "tracks previous changes in multiple currencies" do
       article = Article.new
-      article.title_en = "English title 1"
-      article.title_fr = "Titre en Francais 1"
+      article.amount_usd = "USD amount 1"
+      article.amount_eur = "Titre en Francais 1"
       article.save
 
-      article.title = "English title 2"
-      Mobility.currency = :fr
-      article.title = "Titre en Francais 2"
+      article.amount = "USD amount 2"
+      Mobility.currency = :eur
+      article.amount = "Titre en Francais 2"
 
       article.save
 
-      expect(article.previous_changes).to eq({"title_en" => ["English title 1", "English title 2"],
-                                              "title_fr" => ["Titre en Francais 1", "Titre en Francais 2"]})
+      expect(article.previous_changes).to eq({"amount_usd" => ["USD amount 1", "USD amount 2"],
+                                              "amount_eur" => ["Titre en Francais 1", "Titre en Francais 2"]})
     end
 
     it "resets changes when currency is set to original value" do
@@ -123,25 +123,25 @@ describe "Mobility::Plugins::ActiveModel::Dirty", orm: :active_record do
       expect(article.changed?).to eq(false)
 
       aggregate_failures "after change" do
-        article.title = "foo"
+        article.amount = 100
         expect(article.changed?).to eq(true)
-        expect(article.changed).to eq(["title_en"])
-        expect(article.changes).to eq({ "title_en" => [nil, "foo"] })
+        expect(article.changed).to eq(["amount_usd"])
+        expect(article.changes).to eq({ "amount_usd" => [nil, 100] })
       end
 
       aggregate_failures "after setting attribute back to original value" do
-        article.title = nil
+        article.amount = nil
         expect(article.changed?).to eq(false)
         expect(article.changed).to eq([])
         expect(article.changes).to eq({})
       end
 
       aggregate_failures "changing value in different currency" do
-        Mobility.with_currency(:fr) { article.title = "Titre en Francais" }
+        Mobility.with_currency(:eur) { article.amount = 400 }
 
         expect(article.changed?).to eq(true)
-        expect(article.changed).to eq(["title_fr"])
-        expect(article.changes).to eq({ "title_fr" => [nil, "Titre en Francais"] })
+        expect(article.changed).to eq(["amount_eur"])
+        expect(article.changes).to eq({ "amount_eur" => [nil, 400] })
       end
     end
   end
@@ -149,64 +149,64 @@ describe "Mobility::Plugins::ActiveModel::Dirty", orm: :active_record do
   describe "suffix methods" do
     it "defines suffix methods on translated attribute", rails_version_geq: '5.0' do
       article = Article.new
-      article.title = "foo"
+      article.amount = 100
       article.save
 
-      article.title = "bar"
+      article.amount = 200
 
       aggregate_failures do
-        expect(article.title_changed?).to eq(true)
-        expect(article.title_change).to eq(["foo", "bar"])
-        expect(article.title_was).to eq("foo")
+        expect(article.amount_changed?).to eq(true)
+        expect(article.amount_change).to eq([100, 200])
+        expect(article.amount_was).to eq(100)
 
         article.save
         if ENV['RAILS_VERSION'].present? && ENV['RAILS_VERSION'] < '5.0'
-          expect(article.title_changed?).to eq(nil)
+          expect(article.amount_changed?).to eq(nil)
         else
-          expect(article.title_previously_changed?).to eq(true)
-          expect(article.title_previous_change).to eq(["foo", "bar"])
-          expect(article.title_changed?).to eq(false)
+          expect(article.amount_previously_changed?).to eq(true)
+          expect(article.amount_previous_change).to eq([100, 200])
+          expect(article.amount_changed?).to eq(false)
         end
 
-        article.title_will_change!
-        expect(article.title_changed?).to eq(true)
+        article.amount_will_change!
+        expect(article.amount_changed?).to eq(true)
       end
     end
 
     it "returns changes on attribute for current currency", rails_version_geq: '5.0' do
       article = Article.new
-      article.title = "foo"
+      article.amount = 100
       article.save
 
-      article.title = "bar"
+      article.amount = 200
 
       aggregate_failures do
-        expect(article.title_changed?).to eq(true)
-        expect(article.title_change).to eq(["foo", "bar"])
-        expect(article.title_was).to eq("foo")
+        expect(article.amount_changed?).to eq(true)
+        expect(article.amount_change).to eq([100, 200])
+        expect(article.amount_was).to eq(100)
 
-        Mobility.currency = :fr
+        Mobility.currency = :eur
         if ENV['RAILS_VERSION'].present? && ENV['RAILS_VERSION'] < '5.0'
-          expect(article.title_changed?).to eq(nil)
+          expect(article.amount_changed?).to eq(nil)
         else
-          expect(article.title_changed?).to eq(false)
+          expect(article.amount_changed?).to eq(false)
         end
-        expect(article.title_change).to eq(nil)
-        expect(article.title_was).to eq(nil)
+        expect(article.amount_change).to eq(nil)
+        expect(article.amount_was).to eq(nil)
       end
     end
   end
 
   describe "restoring attributes" do
     it "defines restore_<attribute>! for translated attributes" do
-      Mobility.currency = :'pt-BR'
+      Mobility.currency = :gbp
       article = Article.new
       article.save
 
-      article.title = "foo"
+      article.amount = 100
 
-      article.restore_title!
-      expect(article.title).to eq(nil)
+      article.restore_amount!
+      expect(article.amount).to eq(nil)
       expect(article.changes).to eq({})
     end
 
@@ -214,23 +214,23 @@ describe "Mobility::Plugins::ActiveModel::Dirty", orm: :active_record do
       article = Article.new
       article.save
 
-      article.title = "foo"
-      article.send :restore_attribute!, :title
+      article.amount = 100
+      article.send :restore_attribute!, :amount
 
-      expect(article.title).to eq(nil)
+      expect(article.amount).to eq(nil)
     end
 
     it "handles translated attributes when passed to restore_attributes" do
       article = Article.new
-      article.title = "foo"
+      article.amount = 100
       article.save
 
-      expect(article.title).to eq("foo")
+      expect(article.amount).to eq(100)
 
-      article.title = "bar"
-      expect(article.title).to eq("bar")
-      article.restore_attributes([:title])
-      expect(article.title).to eq("foo")
+      article.amount = 200
+      expect(article.amount).to eq(200)
+      article.restore_attributes([:amount])
+      expect(article.amount).to eq(100)
     end
   end
 
@@ -241,50 +241,50 @@ describe "Mobility::Plugins::ActiveModel::Dirty", orm: :active_record do
         include ActiveModel::Dirty
         extend Mobility
       end
-      ArticleWithFallbacks.translates :title, backend: backend_class, dirty: true, cache: false, fallbacks: { en: 'ja' }
+      ArticleWithFallbacks.translates :amount, backend: backend_class, dirty: true, cache: false, fallbacks: { usd: 'jpy' }
     end
 
     it "does not compare with fallback value" do
       article = ArticleWithFallbacks.new
 
       aggregate_failures "before change" do
-        expect(article.title).to eq(nil)
+        expect(article.amount).to eq(nil)
         expect(article.changed?).to eq(false)
         expect(article.changed).to eq([])
         expect(article.changes).to eq({})
       end
 
       aggregate_failures "set fallback currency value" do
-        Mobility.with_currency(:ja) { article.title = "あああ" }
-        expect(article.title).to eq("あああ")
+        Mobility.with_currency(:jpy) { article.amount = 500 }
+        expect(article.amount).to eq(500)
         expect(article.changed?).to eq(true)
-        expect(article.changed).to eq(["title_ja"])
-        expect(article.changes).to eq({ "title_ja" => [nil, "あああ"]})
-        Mobility.with_currency(:ja) { expect(article.title).to eq("あああ") }
+        expect(article.changed).to eq(["amount_jpy"])
+        expect(article.changes).to eq({ "amount_jpy" => [nil, 500]})
+        Mobility.with_currency(:jpy) { expect(article.amount).to eq(500) }
       end
 
       aggregate_failures "set value in current currency to same value" do
-        article.title = nil
-        expect(article.title).to eq("あああ")
+        article.amount = nil
+        expect(article.amount).to eq(500)
         expect(article.changed?).to eq(true)
-        expect(article.changed).to eq(["title_ja"])
-        expect(article.changes).to eq({ "title_ja" => [nil, "あああ"]})
+        expect(article.changed).to eq(["amount_jpy"])
+        expect(article.changes).to eq({ "amount_jpy" => [nil, 500]})
       end
 
       aggregate_failures "set value in fallback currency to different value" do
-        Mobility.with_currency(:ja) { article.title = "ばばば" }
-        expect(article.title).to eq("ばばば")
+        Mobility.with_currency(:jpy) { article.amount = 600 }
+        expect(article.amount).to eq(600)
         expect(article.changed?).to eq(true)
-        expect(article.changed).to eq(["title_ja"])
-        expect(article.changes).to eq({ "title_ja" => [nil, "ばばば"]})
+        expect(article.changed).to eq(["amount_jpy"])
+        expect(article.changes).to eq({ "amount_jpy" => [nil, 600]})
       end
 
       aggregate_failures "set value in current currency to different value" do
-        article.title = "Title"
-        expect(article.title).to eq("Title")
+        article.amount = 1000
+        expect(article.amount).to eq(1000)
         expect(article.changed?).to eq(true)
-        expect(article.changed).to match_array(["title_ja", "title_en"])
-        expect(article.changes).to eq({ "title_ja" => [nil, "ばばば"], "title_en" => [nil, "Title"]})
+        expect(article.changed).to match_array(["amount_jpy", "amount_usd"])
+        expect(article.changes).to eq({ "amount_jpy" => [nil, 600], "amount_usd" => [nil, 1000]})
       end
     end
   end

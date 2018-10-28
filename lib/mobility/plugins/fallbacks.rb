@@ -148,9 +148,13 @@ the current currency was +nil+.
 
       def convert_option_to_fallbacks(option)
         if option.is_a?(::Hash)
-          Mobility.new_fallbacks(option)
+          option = option.transform_values(&:to_sym)
+          ::Hash.new do |h, k|
+            currencies = option[k] ? Array(option[k]) : [k]
+            [k, *currencies, Mobility.default_currency].uniq
+          end
         elsif option == true
-          Mobility.new_fallbacks
+          ::Hash.new { |_, k| [k, Mobility.default_currency].uniq }
         else
           ::Hash.new { [] }
         end
