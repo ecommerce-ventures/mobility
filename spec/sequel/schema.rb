@@ -34,7 +34,7 @@ module Mobility
             Integer     :article_id, allow_null: false
             String      :currency,     allow_null: false
             String      :title
-            String      :subtitle
+            Integer     :total
             String      :content, size: 65535
             DateTime    :created_at, allow_null: false
             DateTime    :updated_at, allow_null: false

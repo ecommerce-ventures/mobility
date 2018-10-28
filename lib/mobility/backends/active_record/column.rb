@@ -67,7 +67,7 @@ can be run again to add new attributes or currencies.)
       end
 
       def get_column_currencies
-        column_name_regex = /\A#{attribute}_([a-z]{2}(_[a-z]{2})?)\z/.freeze
+        column_name_regex = /\A#{attribute}_([a-z]{3}?)\z/.freeze
         model.class.columns.map do |c|
           (match = c.name.match(column_name_regex)) && match[1].to_sym
         end.compact

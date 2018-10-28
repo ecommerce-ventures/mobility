@@ -23,7 +23,7 @@ module Mobility
             t.string :currency
             t.integer :article_id
             t.integer :amount
-            t.string :subtitle
+            t.integer :total
             t.integer :tax
             t.timestamps null: false
           end
@@ -72,14 +72,14 @@ module Mobility
 
 
           create_table "comments" do |t|
-            t.integer :tax_en
-            t.integer :tax_ja
-            t.integer :tax_pt_br
-            t.integer :tax_ru
-            t.integer :amount_en
-            t.integer :amount_ja
-            t.integer :amount_pt_br
-            t.integer :amount_ru
+            t.integer :amount_usd
+            t.integer :amount_jpy
+            t.integer :amount_gbp
+            t.integer :amount_cad
+            t.integer :tax_usd
+            t.integer :tax_jpy
+            t.integer :tax_gbp
+            t.integer :tax_cad
             t.boolean :published
             t.integer :article_id
             t.timestamps null: false

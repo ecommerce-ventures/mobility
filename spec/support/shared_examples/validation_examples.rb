@@ -1,4 +1,4 @@
-shared_examples_for "AR Model validation" do |model_class_name, attribute1=:title, attribute2=:content|
+shared_examples_for "AR Model validation" do |model_class_name, attribute1=:amount, attribute2=:tax|
   describe "Uniqueness validation" do
     context "without scope" do
       let(:model_class) do
@@ -8,20 +8,20 @@ shared_examples_for "AR Model validation" do |model_class_name, attribute1=:titl
       end
 
       it "is valid if no other record has same attribute value in this currency" do
-        Mobility.with_currency(:ja) { model_class.create(attribute1 => "foo") }
-        expect(model_class.new(attribute1 => "foo")).to be_valid
+        Mobility.with_currency(:jpy) { model_class.create(attribute1 => 100) }
+        expect(model_class.new(attribute1 => 100)).to be_valid
       end
 
       it "is invalid if other record has same attribute value in this currency" do
-        model_class.create(attribute1 => "foo")
-        expect(model_class.new(attribute1 => "foo")).not_to be_valid
+        model_class.create(attribute1 => 100)
+        expect(model_class.new(attribute1 => 100)).not_to be_valid
       end
 
       context "with default_scope defined" do
         it "removes default_scope" do
           model_class.class_eval { default_scope { none } }
-          model_class.create(attribute1 => "foo")
-          expect(model_class.new(attribute1 => "foo")).not_to be_valid
+          model_class.create(attribute1 => 100)
+          expect(model_class.new(attribute1 => 100)).not_to be_valid
         end
       end
     end
@@ -34,14 +34,14 @@ shared_examples_for "AR Model validation" do |model_class_name, attribute1=:titl
       end
 
       it "is valid if no other record has same attribute value in this currency, for the same scope" do
-        model_class.create(attribute1 => "foo", published: true)
-        expect(model_class.new(attribute1 => "foo", published: false)).to be_valid
+        model_class.create(attribute1 => 100, published: true)
+        expect(model_class.new(attribute1 => 100, published: false)).to be_valid
       end
 
       it "is invalid if other record has same attribute value in this currency, for the same scope" do
-        model_class.create(attribute1 => "foo", published: true)
-        instance1 = model_class.new(attribute1 => "foo", published: true)
-        instance2 = Mobility.with_currency(:ja) { model_class.new(attribute1  => "foo", published: true) }
+        model_class.create(attribute1 => 100, published: true)
+        instance1 = model_class.new(attribute1 => 100, published: true)
+        instance2 = Mobility.with_currency(:jpy) { model_class.new(attribute1  => 100, published: true) }
         expect(instance1).not_to be_valid
         expect(instance2).to be_valid
       end
@@ -55,19 +55,19 @@ shared_examples_for "AR Model validation" do |model_class_name, attribute1=:titl
       end
 
       it "is valid if no other record has same attribute value in this currency, for the same scope" do
-        model_class.create(attribute1 => "foo", attribute2 => "bar")
-        expect(model_class.new(attribute1 => "foo", attribute2 => "baz")).to be_valid
+        model_class.create(attribute1 => 100, attribute2 => 200)
+        expect(model_class.new(attribute1 => 100, attribute2 => 300)).to be_valid
       end
 
       it "is invalid if other record has same attribute value in this currency, for the same scope" do
-        model_class.create(attribute1 => "foo", attribute2 => "bar")
-        expect(model_class.new(attribute1 => "foo", attribute2 => "bar")).not_to be_valid
+        model_class.create(attribute1 => 100, attribute2 => 200)
+        expect(model_class.new(attribute1 => 100, attribute2 => 200)).not_to be_valid
 
-        Mobility.with_currency(:ja) do
-          expect(model_class.new(attribute1 => "foo", attribute2 => "bar")).to be_valid
+        Mobility.with_currency(:jpy) do
+          expect(model_class.new(attribute1 => 100, attribute2 => 200)).to be_valid
 
-          model_class.create(attribute1 => "foo", attribute2 => "bar")
-          expect(model_class.new(attribute1 => "foo", attribute2 => "bar")).not_to be_valid
+          model_class.create(attribute1 => 100, attribute2 => 200)
+          expect(model_class.new(attribute1 => 100, attribute2 => 200)).not_to be_valid
         end
       end
     end
@@ -80,14 +80,14 @@ shared_examples_for "AR Model validation" do |model_class_name, attribute1=:titl
       end
 
       it "is valid if no other record has same attribute value, for the same scope in this currency" do
-        model_class.create(published: true, attribute1 => "foo")
-        expect(model_class.new(published: true, attribute1 => "baz")).to be_valid
+        model_class.create(published: true, attribute1 => 100)
+        expect(model_class.new(published: true, attribute1 => 300)).to be_valid
       end
 
       it "is invalid if other record has same attribute value in this currency, for the same scope" do
-        model_class.create(published: true, attribute1 => "foo")
-        instance1 = model_class.new(published: true, attribute1 => "foo")
-        instance2 = Mobility.with_currency(:ja) { model_class.new(published:  true, attribute1 => "foo") }
+        model_class.create(published: true, attribute1 => 100)
+        instance1 = model_class.new(published: true, attribute1 => 100)
+        instance2 = Mobility.with_currency(:jpy) { model_class.new(published:  true, attribute1 => 100) }
         expect(instance1).not_to be_valid
         expect(instance2).to be_valid
       end
@@ -122,7 +122,7 @@ shared_examples_for "AR Model validation" do |model_class_name, attribute1=:titl
         model_class.create(published: true)
         expect(model_class.new(published: true)).not_to be_valid
 
-        Mobility.with_currency(:ja) do
+        Mobility.with_currency(:jpy) do
           expect(model_class.new(published: true)).not_to be_valid
         end
       end

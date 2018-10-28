@@ -1,4 +1,4 @@
-shared_examples_for "cache key"  do |model_class_name, attribute=:title|
+shared_examples_for "cache key"  do |model_class_name, attribute=:amount|
   let(:model_class) { constantize(model_class_name) }
 
   it "changes cache key when price updated" do

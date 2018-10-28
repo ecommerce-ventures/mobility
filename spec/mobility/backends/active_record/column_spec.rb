@@ -9,19 +9,19 @@ describe "Mobility::Backends::ActiveRecord::Column", orm: :active_record do
       extend Mobility
       self.table_name = 'comments'
     end
-    include_backend_examples described_class, model_class, "content"
+    include_backend_examples described_class, model_class, "amount"
   end
 
   context "with standard plugins applied" do
-    let(:attributes) { %w[content author] }
+    let(:attributes) { %w[amount tax] }
     let(:options) { {} }
     let(:backend) do
       described_class.with_options(options).new(comment, attributes.first)
     end
     let(:comment) do
-      Comment.create(content_en: "Good post!",
-                     content_ja: "なかなか面白い記事",
-                     content_pt_br: "Olá")
+      Comment.create(amount_usd: 100,
+                     amount_jpy: 200,
+                     amount_gbp: 300)
     end
 
     before do
@@ -32,56 +32,56 @@ describe "Mobility::Backends::ActiveRecord::Column", orm: :active_record do
 
     subject { comment }
 
-    include_cache_key_examples "Comment", :content
+    include_cache_key_examples "Comment", :amount
 
     describe "#read" do
       it "returns attribute in currency from appropriate column" do
         aggregate_failures do
-          expect(backend.read(:en)).to eq("Good post!")
-          expect(backend.read(:ja)).to eq("なかなか面白い記事")
+          expect(backend.read(:usd)).to eq(100)
+          expect(backend.read(:jpy)).to eq(200)
         end
       end
 
       it "handles dashed currencies" do
-        expect(backend.read(:"pt-BR")).to eq("Olá")
+        expect(backend.read(:gbp)).to eq(300)
       end
     end
 
     describe "#write" do
       it "assigns to appropriate columnn" do
-        backend.write(:en, "Crappy post!")
-        backend.write(:ja, "面白くない")
+        backend.write(:usd, 100)
+        backend.write(:jpy, 200)
 
         aggregate_failures do
-          expect(comment.content_en).to eq("Crappy post!")
-          expect(comment.content_ja).to eq("面白くない")
+          expect(comment.amount_usd).to eq(100)
+          expect(comment.amount_jpy).to eq(200)
         end
       end
 
       it "handles dashed currencies" do
-        backend.write(:"pt-BR", "Olá Olá")
-        expect(comment.content_pt_br).to eq "Olá Olá"
+        backend.write(:gbp, 300)
+        expect(comment.amount_gbp).to eq 300
       end
     end
 
     describe "Model accessors" do
-      include_accessor_examples 'Comment', :content, :author
-      include_dup_examples 'Comment', :content
+      include_accessor_examples 'Comment', :amount, :tax
+      include_dup_examples 'Comment', :amount
     end
 
     describe "with currency accessors" do
       it "still works as usual" do
         Comment.translates *attributes, backend: :column, cache: false, currency_accessors: true
-        backend.write(:en, "Crappy post!")
-        expect(comment.content_en).to eq("Crappy post!")
+        backend.write(:usd, 100)
+        expect(comment.amount_usd).to eq(100)
       end
     end
 
     describe "with dirty" do
       it "still works as usual" do
         Comment.translates *attributes, backend: :column, cache: false, dirty: true
-        backend.write(:en, "Crappy post!")
-        expect(comment.content_en).to eq("Crappy post!")
+        backend.write(:usd, 100)
+        expect(comment.amount_usd).to eq(100)
       end
 
       it "tracks changed attributes" do
@@ -89,16 +89,16 @@ describe "Mobility::Backends::ActiveRecord::Column", orm: :active_record do
         comment = Comment.new
 
         aggregate_failures do
-          expect(comment.content).to eq(nil)
+          expect(comment.amount).to eq(nil)
           expect(comment.changed?).to eq(false)
           expect(comment.changed).to eq([])
           expect(comment.changes).to eq({})
 
-          comment.content = "foo"
-          expect(comment.content).to eq("foo")
+          comment.amount = 100
+          expect(comment.amount).to eq(100)
           expect(comment.changed?).to eq(true)
-          expect(comment.changed).to eq(["content_en"])
-          expect(comment.changes).to eq({ "content_en" => [nil, "foo"] })
+          expect(comment.changed).to eq(["amount_usd"])
+          expect(comment.changes).to eq({ "amount_usd" => [nil, 100] })
         end
       end
 
@@ -106,13 +106,13 @@ describe "Mobility::Backends::ActiveRecord::Column", orm: :active_record do
         Comment.translates *attributes, backend: :column, cache: false, dirty: true
         comment = Comment.new
 
-        expect(comment.content(currency: :fr)).to eq(nil)
+        expect(comment.amount(currency: :eur)).to eq(nil)
       end
     end
 
     describe "mobility scope (.i18n)" do
-      include_querying_examples 'Comment', :content, :author
-      include_validation_examples 'Comment', :content, :author
+      include_querying_examples 'Comment', :amount, :tax
+      include_validation_examples 'Comment', :amount, :tax
     end
   end
 end if Mobility::Loaded::ActiveRecord

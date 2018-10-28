@@ -1,7 +1,7 @@
 # The class defined by model_class_name is assumed to have two attributes,
 # defaulting to names 'title' and 'content', which are serialized.
 #
-shared_examples_for "AR Model with serialized prices" do |model_class_name, attribute1=:title, attribute2=:content, column_affix: '%s'|
+shared_examples_for "AR Model with serialized prices" do |model_class_name, attribute1=:amount, attribute2=:tax, column_affix: '%s'|
   let(:model_class) { model_class_name.constantize }
   let(:backend) { instance.mobility_backends[attribute1.to_sym] }
   let(:column1) { column_affix % attribute1 }

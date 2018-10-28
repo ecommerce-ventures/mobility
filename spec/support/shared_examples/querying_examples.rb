@@ -1,4 +1,4 @@
-shared_examples_for "AR Model with translated scope" do |model_class_name, a1=:title, a2=:content|
+shared_examples_for "AR Model with translated scope" do |model_class_name, a1=:amount, a2=:tax|
   let(:backend_name) { model_class.mobility_modules.first.backend_name }
   let(:model_class) { model_class_name.constantize }
   let(:query_scope) { model_class.i18n }
@@ -7,23 +7,23 @@ shared_examples_for "AR Model with translated scope" do |model_class_name, a1=:t
   describe ".where" do
     context "querying on one translated attribute" do
       before do
-        @instance1 = model_class.create(a1 => "foo")
-        @instance2 = model_class.create(a1 => "bar")
-        @instance3 = model_class.create(a1 => "baz", published: true)
-        @instance4 = model_class.create(a1 => "baz", published: false)
-        @instance5 = model_class.create(a1 => "foo", published: true)
+        @instance1 = model_class.create(a1 => 100)
+        @instance2 = model_class.create(a1 => 200)
+        @instance3 = model_class.create(a1 => 300, published: true)
+        @instance4 = model_class.create(a1 => 300, published: false)
+        @instance5 = model_class.create(a1 => 100, published: true)
       end
 
       it "returns correct result searching on unique attribute value" do
-        expect(query_scope.where(a1 => "bar")).to eq([@instance2])
+        expect(query_scope.where(a1 => 200)).to eq([@instance2])
       end
 
       it "returns correct results when query matches multiple records" do
-        expect(query_scope.where(a1 => "foo")).to match_array([@instance1, @instance5])
+        expect(query_scope.where(a1 => 100)).to match_array([@instance1, @instance5])
       end
 
       it "returns correct result when querying on translated and untranslated attributes" do
-        expect(query_scope.where(a1 => "baz", published: true)).to eq([@instance3])
+        expect(query_scope.where(a1 => 300, published: true)).to eq([@instance3])
       end
 
       it "returns correct result when querying on nil values" do
@@ -33,38 +33,38 @@ shared_examples_for "AR Model with translated scope" do |model_class_name, a1=:t
 
       context "with content in different currencies" do
         before do
-          Mobility.with_currency(:ja) do
-            @ja_instance1 = model_class.create(a1 => "foo ja")
-            @ja_instance2 = model_class.create(a1 => "foo")
+          Mobility.with_currency(:jpy) do
+            @ja_instance1 = model_class.create(a1 => 400)
+            @ja_instance2 = model_class.create(a1 => 100)
           end
         end
 
         it "returns correct result when querying on same attribute value in different currency" do
-          expect(query_scope.where(a1 => "foo")).to match_array([@instance1, @instance5])
+          expect(query_scope.where(a1 => 100)).to match_array([@instance1, @instance5])
 
-          Mobility.with_currency(:ja) do
-            expect(query_scope.where(a1 => "foo ja")).to eq([@ja_instance1])
-            expect(query_scope.where(a1 => "foo")).to eq([@ja_instance2])
+          Mobility.with_currency(:jpy) do
+            expect(query_scope.where(a1 => 400)).to eq([@ja_instance1])
+            expect(query_scope.where(a1 => 100)).to eq([@ja_instance2])
           end
         end
 
         it "returns correct result when querying with currency option" do
-          expect(query_scope.where(a1 => "foo", currency: :en)).to match_array([@instance1, @instance5])
-          expect(query_scope.where(a1 => "foo ja", currency: :ja)).to eq([@ja_instance1])
-          expect(query_scope.where(a1 => "foo", currency: :ja)).to eq([@ja_instance2])
+          expect(query_scope.where(a1 => 100, currency: :usd)).to match_array([@instance1, @instance5])
+          expect(query_scope.where(a1 => 400, currency: :jpy)).to eq([@ja_instance1])
+          expect(query_scope.where(a1 => 100, currency: :jpy)).to eq([@ja_instance2])
         end
 
         it "returns correct result when querying with currency option twice in separate clauses" do
-          @ja_instance1.update(a1 => "foo en")
-          expect(query_scope.where(a1 => "foo ja", currency: :ja).where(a1 => "foo en", currency: :en)).to eq([@ja_instance1])
-          expect(query_scope.where(a1 => "foo", currency: :ja).where(a1 => nil, currency: :en)).to eq([@ja_instance2])
+          @ja_instance1.update(a1 => 700)
+          expect(query_scope.where(a1 => 400, currency: :jpy).where(a1 => 700, currency: :usd)).to eq([@ja_instance1])
+          expect(query_scope.where(a1 => 100, currency: :jpy).where(a1 => nil, currency: :usd)).to eq([@ja_instance2])
         end
       end
 
       context "with exists?" do
         it "returns correct result searching on unique attribute value" do
           aggregate_failures do
-            expect(query_scope.where(a1 => "bar").exists?).to eq(true)
+            expect(query_scope.where(a1 => 200).exists?).to eq(true)
             expect(query_scope.where(a1 => "aaa").exists?).to eq(false)
           end
         end
@@ -73,62 +73,62 @@ shared_examples_for "AR Model with translated scope" do |model_class_name, a1=:t
 
     context "with two translated attributes" do
       before do
-        @instance1 = model_class.create(a1 => "foo"                                       )
-        @instance2 = model_class.create(a1 => "foo", a2 => "foo content"                  )
-        @instance3 = model_class.create(a1 => "foo", a2 => "foo content", published: false)
-        @instance4 = model_class.create(             a2 => "foo content"                  )
-        @instance5 = model_class.create(a1 => "bar", a2 => "bar content"                  )
-        @instance6 = model_class.create(a1 => "bar",                      published: true )
+        @instance1 = model_class.create(a1 => 100                                       )
+        @instance2 = model_class.create(a1 => 100, a2 => 1200                  )
+        @instance3 = model_class.create(a1 => 100, a2 => 1200, published: false)
+        @instance4 = model_class.create(             a2 => 1200                  )
+        @instance5 = model_class.create(a1 => 200, a2 => 600                  )
+        @instance6 = model_class.create(a1 => 200,                      published: true )
       end
 
       # @note Regression spec
       it "does not modify scope in-place" do
-        query_scope.where(a1 => "foo")
+        query_scope.where(a1 => 100)
         expect(query_scope.to_sql).to eq(model_class.all.to_sql)
       end
 
       it "returns correct results querying on one attribute" do
-        expect(query_scope.where(a1 => "foo")).to match_array([@instance1, @instance2, @instance3])
-        expect(query_scope.where(a2 => "foo content")).to match_array([@instance2, @instance3, @instance4])
+        expect(query_scope.where(a1 => 100)).to match_array([@instance1, @instance2, @instance3])
+        expect(query_scope.where(a2 => 1200)).to match_array([@instance2, @instance3, @instance4])
       end
 
       it "returns correct results querying on two attributes in single where call" do
-        expect(query_scope.where(a1 => "foo", a2 => "foo content")).to match_array([@instance2, @instance3])
+        expect(query_scope.where(a1 => 100, a2 => 1200)).to match_array([@instance2, @instance3])
       end
 
       it "returns correct results querying on two attributes in separate where calls" do
-        expect(query_scope.where(a1 => "foo").where(a2 => "foo content")).to match_array([@instance2, @instance3])
+        expect(query_scope.where(a1 => 100).where(a2 => 1200)).to match_array([@instance2, @instance3])
       end
 
       it "returns correct result querying on two translated attributes and untranslated attribute" do
-        expect(query_scope.where(a1 => "foo", a2 => "foo content", published: false)).to eq([@instance3])
+        expect(query_scope.where(a1 => 100, a2 => 1200, published: false)).to eq([@instance3])
       end
 
       it "works with nil values" do
-        expect(query_scope.where(a1 => "foo", a2 => nil)).to eq([@instance1])
-        expect(query_scope.where(a1 => "foo").where(a2 => nil)).to eq([@instance1])
+        expect(query_scope.where(a1 => 100, a2 => nil)).to eq([@instance1])
+        expect(query_scope.where(a1 => 100).where(a2 => nil)).to eq([@instance1])
         instance = model_class.create
         expect(query_scope.where(a1 => nil, a2 => nil)).to eq([instance])
       end
 
       context "with content in different currencies" do
         before do
-          Mobility.with_currency(:ja) do
-            @ja_instance1 = model_class.create(a1 => "foo ja", a2 => "foo content ja")
-            @ja_instance2 = model_class.create(a1 => "foo",    a2 => "foo content"   )
-            @ja_instance3 = model_class.create(a1 => "foo"                           )
-            @ja_instance4 = model_class.create(                a2 => "foo"           )
+          Mobility.with_currency(:jpy) do
+            @ja_instance1 = model_class.create(a1 => 400, a2 => 1300)
+            @ja_instance2 = model_class.create(a1 => 100,    a2 => 1200   )
+            @ja_instance3 = model_class.create(a1 => 100                           )
+            @ja_instance4 = model_class.create(                a2 => 100           )
           end
         end
 
         it "returns correct result when querying on same attribute values in different currency" do
-          expect(query_scope.where(a1 => "foo", a2 => "foo content")).to match_array([@instance2, @instance3])
-          expect(query_scope.where(a1 => "foo", a2 => nil)).to eq([@instance1])
+          expect(query_scope.where(a1 => 100, a2 => 1200)).to match_array([@instance2, @instance3])
+          expect(query_scope.where(a1 => 100, a2 => nil)).to eq([@instance1])
 
-          Mobility.with_currency(:ja) do
-            expect(query_scope.where(a1 => "foo")).to match_array([@ja_instance2, @ja_instance3])
-            expect(query_scope.where(a1 => "foo", a2 => "foo content")).to eq([@ja_instance2])
-            expect(query_scope.where(a1 => "foo ja", a2 => "foo content ja")).to eq([@ja_instance1])
+          Mobility.with_currency(:jpy) do
+            expect(query_scope.where(a1 => 100)).to match_array([@ja_instance2, @ja_instance3])
+            expect(query_scope.where(a1 => 100, a2 => 1200)).to eq([@ja_instance2])
+            expect(query_scope.where(a1 => 400, a2 => 1300)).to eq([@ja_instance1])
           end
         end
       end
@@ -136,28 +136,28 @@ shared_examples_for "AR Model with translated scope" do |model_class_name, a1=:t
 
     context "with array of values" do
       before do
-        @instance1 = model_class.create(a1 => "foo")
-        @instance2 = model_class.create(a1 => "bar")
-        @instance3 = model_class.create(a1 => "baz")
+        @instance1 = model_class.create(a1 => 100)
+        @instance2 = model_class.create(a1 => 200)
+        @instance3 = model_class.create(a1 => 300)
         @instance4 = model_class.create(a1 => nil)
 
-        Mobility.with_currency(:ja) do
-          @ja_instance1 = model_class.create(a1 => "foo")
+        Mobility.with_currency(:jpy) do
+          @ja_instance1 = model_class.create(a1 => 100)
         end
       end
 
       it "returns records with matching translated attribute values" do
-        expect(query_scope.where(a1 => ["foo", "baz"])).to match_array([@instance1, @instance3])
-        expect(query_scope.where(a1 => ["foo", nil])).to match_array([@instance1, @instance4, @ja_instance1])
+        expect(query_scope.where(a1 => [100, 300])).to match_array([@instance1, @instance3])
+        expect(query_scope.where(a1 => [100, nil])).to match_array([@instance1, @instance4, @ja_instance1])
       end
 
       it "collapses clauses in array of values" do
-        instance = model_class.create(a1 => "baz")
-        expect(query_scope.where(a1 => ["foo", nil, nil])).to match_array([@instance1, @instance4, @ja_instance1])
-        expect(query_scope.where(a1 => ["foo", "foo", nil])).to match_array([@instance1, @instance4, @ja_instance1])
+        instance = model_class.create(a1 => 300)
+        expect(query_scope.where(a1 => [100, nil, nil])).to match_array([@instance1, @instance4, @ja_instance1])
+        expect(query_scope.where(a1 => [100, 100, nil])).to match_array([@instance1, @instance4, @ja_instance1])
         aggregate_failures do
-          expect(query_scope.where(a1 => ["foo", nil]).to_sql).to eq(query_scope.where(a1 => ["foo", nil, nil]).to_sql)
-          expect(query_scope.where(a1 => ["foo", nil]).to_sql).to eq(query_scope.where(a1 => ["foo", "foo", nil]).to_sql)
+          expect(query_scope.where(a1 => [100, nil]).to_sql).to eq(query_scope.where(a1 => [100, nil, nil]).to_sql)
+          expect(query_scope.where(a1 => [100, nil]).to_sql).to eq(query_scope.where(a1 => [100, 100, nil]).to_sql)
         end
       end
     end
@@ -166,21 +166,21 @@ shared_examples_for "AR Model with translated scope" do |model_class_name, a1=:t
       let(:sti_model) { Class.new(model_class) }
 
       it "works with sti model" do
-        instance = sti_model.create(a1 => "foo")
-        sti_model.i18n.where(a1 => "foo")
-        expect(sti_model.i18n.where(a1 => "foo")).to match_array([instance])
+        instance = sti_model.create(a1 => 100)
+        sti_model.i18n.where(a1 => 100)
+        expect(sti_model.i18n.where(a1 => 100)).to match_array([instance])
       end
     end
   end
 
   describe ".not" do
     before do
-      @instance1 = model_class.create(a1 => "foo"                                       )
-      @instance2 = model_class.create(a1 => "foo", a2 => "foo content"                  )
-      @instance3 = model_class.create(a1 => "foo", a2 => "foo content", published: false)
-      @instance4 = model_class.create(             a2 => "foo content"                  )
-      @instance5 = model_class.create(a1 => "bar", a2 => "bar content", published: true )
-      @instance6 = model_class.create(a1 => "bar", a2 => "baz content", published: false)
+      @instance1 = model_class.create(a1 => 100                                       )
+      @instance2 = model_class.create(a1 => 100, a2 => 1200                  )
+      @instance3 = model_class.create(a1 => 100, a2 => 1200, published: false)
+      @instance4 = model_class.create(             a2 => 1200                  )
+      @instance5 = model_class.create(a1 => 200, a2 => 600, published: true )
+      @instance6 = model_class.create(a1 => 200, a2 => 900, published: false)
       @instance7 = model_class.create(                                  published: true )
     end
 
@@ -197,49 +197,49 @@ shared_examples_for "AR Model with translated scope" do |model_class_name, a1=:t
     end
 
     it "returns record without translated attribute value" do
-      expect(query_scope.where.not(a1 => "foo")).to match_array([@instance5, @instance6])
+      expect(query_scope.where.not(a1 => 100)).to match_array([@instance5, @instance6])
     end
 
     it "returns record without set of translated attribute values" do
-      expect(query_scope.where.not(a1 => "foo", a2 => "baz content")).to match_array([@instance5])
+      expect(query_scope.where.not(a1 => 100, a2 => 900)).to match_array([@instance5])
     end
 
     it "works in combination with untranslated attributes" do
-      expect(query_scope.where.not(a1 => "foo", published: true)).to eq([@instance6])
+      expect(query_scope.where.not(a1 => 100, published: true)).to eq([@instance6])
     end
 
     it "works with array of values" do
-      instance = model_class.create(a1 => "baz")
+      instance = model_class.create(a1 => 300)
       aggregate_failures do
-        expect(query_scope.where.not(a1 => ["foo", "bar"])).to match_array([instance])
-        expect(query_scope.where.not(a1 => ["foo", nil])).to match_array([instance, @instance5, @instance6])
+        expect(query_scope.where.not(a1 => [100, 200])).to match_array([instance])
+        expect(query_scope.where.not(a1 => [100, nil])).to match_array([instance, @instance5, @instance6])
       end
     end
 
     it "collapses clauses in array of values" do
-      instance = model_class.create(a1 => "baz")
-      expect(query_scope.where.not(a1 => ["foo", nil, nil])).to match_array([instance, @instance5, @instance6])
-      expect(query_scope.where.not(a1 => ["foo", "foo", nil])).to match_array([instance, @instance5, @instance6])
+      instance = model_class.create(a1 => 300)
+      expect(query_scope.where.not(a1 => [100, nil, nil])).to match_array([instance, @instance5, @instance6])
+      expect(query_scope.where.not(a1 => [100, 100, nil])).to match_array([instance, @instance5, @instance6])
       aggregate_failures do
-        expect(query_scope.where.not(a1 => ["foo", nil]).to_sql).to eq(query_scope.where.not(a1 => ["foo", nil, nil]).to_sql)
-        expect(query_scope.where.not(a1 => ["foo", nil]).to_sql).to eq(query_scope.where.not(a1 => ["foo", "foo", nil]).to_sql)
+        expect(query_scope.where.not(a1 => [100, nil]).to_sql).to eq(query_scope.where.not(a1 => [100, nil, nil]).to_sql)
+        expect(query_scope.where.not(a1 => [100, nil]).to_sql).to eq(query_scope.where.not(a1 => [100, 100, nil]).to_sql)
       end
     end
 
     it "uses IN when matching array of two or more non-nil values" do
       aggregate_failures "where" do
-        expect(query_scope.where(a1 => ["foo", "bar"]).to_sql).to match /\sIN\s/
-        expect(query_scope.where(a1 => ["foo", "bar", nil]).to_sql).to match /\sIN\s/
-        expect(query_scope.where(a1 => ["foo", nil]).to_sql).not_to match /\sIN\s/
-        expect(query_scope.where(a1 => "foo").to_sql).not_to match /\sIN\s/
+        expect(query_scope.where(a1 => [100, 200]).to_sql).to match /\sIN\s/
+        expect(query_scope.where(a1 => [100, 200, nil]).to_sql).to match /\sIN\s/
+        expect(query_scope.where(a1 => [100, nil]).to_sql).not_to match /\sIN\s/
+        expect(query_scope.where(a1 => 100).to_sql).not_to match /\sIN\s/
         expect(query_scope.where(a1 => nil).to_sql).not_to match /\sIN\s/
       end
 
       aggregate_failures "where not" do
-        expect(query_scope.where.not(a1 => ["foo", "bar"]).to_sql).to match /\sIN\s/
-        expect(query_scope.where.not(a1 => ["foo", "bar", nil]).to_sql).to match /\sIN\s/
-        expect(query_scope.where.not(a1 => ["foo", nil]).to_sql).not_to match /\sIN\s/
-        expect(query_scope.where.not(a1 => "foo").to_sql).not_to match /\sIN\s/
+        expect(query_scope.where.not(a1 => [100, 200]).to_sql).to match /\sIN\s/
+        expect(query_scope.where.not(a1 => [100, 200, nil]).to_sql).to match /\sIN\s/
+        expect(query_scope.where.not(a1 => [100, nil]).to_sql).not_to match /\sIN\s/
+        expect(query_scope.where.not(a1 => 100).to_sql).not_to match /\sIN\s/
         expect(query_scope.where.not(a1 => nil).to_sql).not_to match /\sIN\s/
       end
     end
@@ -248,10 +248,10 @@ shared_examples_for "AR Model with translated scope" do |model_class_name, a1=:t
   describe ".order" do
     let!(:i) do
       [
-        model_class.create(a1 => "foo0"),
-        model_class.create(a1 => "foo2", a2 => "foo1"),
-        model_class.create(a1 => "foo1", a2 => "bar2"),
-        model_class.create(a1 => "foo3", a2 => "bar1")
+        model_class.create(a1 => 101),
+        model_class.create(a1 => 103, a2 => 102),
+        model_class.create(a1 => 102, a2 => 203),
+        model_class.create(a1 => 104, a2 => 202)
       ]
     end
 
@@ -273,7 +273,7 @@ shared_examples_for "AR Model with translated scope" do |model_class_name, a1=:t
     it "orders records correctly with 2-key hash argument" do
       skip "Not supported by #{backend_name}" if [:table, :key_value].include?(backend_name)
 
-      added = model_class.create(a1 => "foo2", a2 => "foo2")
+      added = model_class.create(a1 => 103, a2 => 103)
       expect(query_scope.order(a1 => :desc, a2 => :asc)).to eq([i[3], i[1], added, i[2], i[0]])
     end
 
@@ -289,36 +289,36 @@ shared_examples_for "AR Model with translated scope" do |model_class_name, a1=:t
 
   describe ".pluck", rails_version_geq: '5.0' do
     before do
-      [["foo0", "bar3", true],
-       ["foo2", "bar0", false],
-       ["foo0", "bar1", true],
-       ["foo1", "bar2", false],
-       ["foo3", "bar1", nil]].each do |(val1, val2, val3)|
+      [[101, 204, true],
+       [103, 201, false],
+       [101, 202, true],
+       [102, 203, false],
+       [104, 202, nil]].each do |(val1, val2, val3)|
         model_class.create(a1 => val1, a2 => val2, :published => val3)
       end
     end
 
     it "plucks individual attribute values" do
-      expect(ordered_results.pluck(a1)).to eq(["foo0", "foo2", "foo0", "foo1", "foo3"])
+      expect(ordered_results.pluck(a1)).to eq([101, 103, 101, 102, 104])
     end
 
     it "plucks pairs of attribute values" do
       expect(ordered_results.pluck(a1, a2)).to eq(
-        [["foo0", "bar3"],
-         ["foo2", "bar0"],
-         ["foo0", "bar1"],
-         ["foo1", "bar2"],
-         ["foo3", "bar1"]]
+        [[101, 204],
+         [103, 201],
+         [101, 202],
+         [102, 203],
+         [104, 202]]
       )
     end
 
     it "plucks translated attributes mixed with untranslated attributes" do
       expect(ordered_results.pluck(a1, :published, a2)).to eq(
-        [["foo0", true,  "bar3"],
-         ["foo2", false, "bar0"],
-         ["foo0", true,  "bar1"],
-         ["foo1", false, "bar2"],
-         ["foo3", nil,   "bar1"]]
+        [[101, true,  204],
+         [103, false, 201],
+         [101, true,  202],
+         [102, false, 203],
+         [104, nil,   202]]
       )
     end
 
@@ -327,27 +327,27 @@ shared_examples_for "AR Model with translated scope" do |model_class_name, a1=:t
     end
 
     it "works with nil values" do
-      model_class.create(a1 => nil, a2 => "bar4")
-      model_class.create(a1 => "foo4", a2 => nil)
+      model_class.create(a1 => nil, a2 => 205)
+      model_class.create(a1 => 105, a2 => nil)
       expect(ordered_results.pluck(a1, a2)).to eq(
-        [["foo0", "bar3"],
-         ["foo2", "bar0"],
-         ["foo0", "bar1"],
-         ["foo1", "bar2"],
-         ["foo3", "bar1"],
-         [nil,    "bar4"],
-         ["foo4", nil   ]]
+        [[101, 204],
+         [103, 201],
+         [101, 202],
+         [102, 203],
+         [104, 202],
+         [nil,    205],
+         [105, nil   ]]
       )
     end
   end
 
   describe ".select/.group", rails_version_geq: '5.0' do
     before do
-      [["foo", "baz", true],
-       ["foo", "baz", false],
-       ["bar", "baz", true],
-       ["bar", "foo", false],
-       ["bar", "foo", nil]].each do |(val1, val2, val3)|
+      [[100, 300, true],
+       [100, 300, false],
+       [200, 300, true],
+       [200, 100, false],
+       [200, 100, nil]].each do |(val1, val2, val3)|
         model_class.create(a1 => val1, a2 => val2, :published => val3)
       end
     end
@@ -355,11 +355,11 @@ shared_examples_for "AR Model with translated scope" do |model_class_name, a1=:t
     describe "selecting translated attributes" do
       it "returns value from attribute methods on results" do
         selected = ordered_results.select(a1)
-        expect(selected[0].send(a1)).to eq("foo")
-        expect(selected[1].send(a1)).to eq("foo")
-        expect(selected[2].send(a1)).to eq("bar")
-        expect(selected[3].send(a1)).to eq("bar")
-        expect(selected[4].send(a1)).to eq("bar")
+        expect(selected[0].send(a1)).to eq(100)
+        expect(selected[1].send(a1)).to eq(100)
+        expect(selected[2].send(a1)).to eq(200)
+        expect(selected[3].send(a1)).to eq(200)
+        expect(selected[4].send(a1)).to eq(200)
       end
     end
 
@@ -371,12 +371,12 @@ shared_examples_for "AR Model with translated scope" do |model_class_name, a1=:t
 
       it "works with count and group" do
         selected = query_scope.select(a1).group(a1)
-        expect(selected.count).to eq({ "foo" => 2, "bar" => 3 })
+        expect(selected.count).to eq({ 100 => 2, 200 => 3 })
       end
 
       it "works with count and group on two attributes" do
         selected = query_scope.select(a1).group(a1, a2)
-        expect(selected.count).to eq({ ["foo", "baz"] => 2, ["bar", "baz"] => 1, ["bar", "foo"] => 2 })
+        expect(selected.count).to eq({ [100, 300] => 2, [200, 300] => 1, [200, 100] => 2 })
       end
     end
   end
@@ -387,18 +387,18 @@ shared_examples_for "AR Model with translated scope" do |model_class_name, a1=:t
 
     context "single-block querying" do
       let!(:i) { [
-        model_class.create(a1 => "foo"             ),
+        model_class.create(a1 => 100             ),
         model_class.create(                        ),
-        model_class.create(             a2 => "bar"),
-        model_class.create(             a2 => "foo"),
-        model_class.create(a1 => "bar"             ),
-        model_class.create(a1 => "foo", a2 => "bar"),
-        model_class.create(a1 => "foo", a2 => "baz")
+        model_class.create(             a2 => 200),
+        model_class.create(             a2 => 100),
+        model_class.create(a1 => 200             ),
+        model_class.create(a1 => 100, a2 => 200),
+        model_class.create(a1 => 100, a2 => 300)
       ] }
 
       describe "equality" do
         it "handles (a EQ 'foo')" do
-          expect(query { __send__(a1).eq("foo") }).to match_array([i[0], *i[5..6]])
+          expect(query { __send__(a1).eq(100) }).to match_array([i[0], *i[5..6]])
         end
 
         it "handles (a EQ NULL)" do
@@ -407,38 +407,38 @@ shared_examples_for "AR Model with translated scope" do |model_class_name, a1=:t
 
         it "handles (a EQ b)" do
           matching = [
-            model_class.create(a1 => "foo", a2 => "foo"),
-            model_class.create(a1 => "bar", a2 => "bar")
+            model_class.create(a1 => 100, a2 => 100),
+            model_class.create(a1 => 200, a2 => 200)
           ]
           expect(query { __send__(a1).eq(__send__(a2)) }).to match_array(matching)
         end
 
         context "with currency option" do
           it "handles (a EQ 'foo')" do
-            post1 = model_class.new(a1 => "foo en", a2 => "bar en")
-            Mobility.with_currency(:ja) do
-              post1.send("#{a1}=", "foo ja")
-              post1.send("#{a2}=", "bar ja")
+            post1 = model_class.new(a1 => 700, a2 => 800)
+            Mobility.with_currency(:jpy) do
+              post1.send("#{a1}=", 400)
+              post1.send("#{a2}=", 500)
             end
             post1.save
 
-            post2 = model_class.new(a1 => "baz en")
-            Mobility.with_currency(:'pt-BR') { post2.send("#{a1}=", "baz pt-br") }
+            post2 = model_class.new(a1 => 900)
+            Mobility.with_currency(:gbp) { post2.send("#{a1}=", 1000) }
             post2.save
 
-            expect(query(currency: :en) { __send__(a1).eq("foo en") }).to match_array([post1])
-            expect(query(currency: :en) { __send__(a2).eq("bar en") }).to match_array([post1])
-            expect(query(currency: :ja) { __send__(a1).eq("foo ja") }).to match_array([post1])
-            expect(query(currency: :ja) { __send__(a2).eq("bar ja") }).to match_array([post1])
-            expect(query(currency: :en) { __send__(a1).eq("baz en") }).to match_array([post2])
-            expect(query(currency: :'pt-BR') { __send__(a1).eq("baz pt-br") }).to match_array([post2])
+            expect(query(currency: :usd) { __send__(a1).eq(700) }).to match_array([post1])
+            expect(query(currency: :usd) { __send__(a2).eq(800) }).to match_array([post1])
+            expect(query(currency: :jpy) { __send__(a1).eq(400) }).to match_array([post1])
+            expect(query(currency: :jpy) { __send__(a2).eq(500) }).to match_array([post1])
+            expect(query(currency: :usd) { __send__(a1).eq(900) }).to match_array([post2])
+            expect(query(currency: :gbp) { __send__(a1).eq(1000) }).to match_array([post2])
           end
         end
       end
 
       describe "not equal" do
         it "handles (a NOT EQ 'foo')" do
-          expect(query { __send__(a1).not_eq("foo") }).to match_array([i[4]])
+          expect(query { __send__(a1).not_eq(100) }).to match_array([i[4]])
         end
 
         it "handles (a NOT EQ NULL)" do
@@ -465,13 +465,13 @@ shared_examples_for "AR Model with translated scope" do |model_class_name, a1=:t
       describe "AND" do
         it "handles (a AND b)" do
           expect(query {
-            __send__(a1).eq("foo").and(__send__(a2).eq("bar"))
+            __send__(a1).eq(100).and(__send__(a2).eq(200))
           }).to match_array([i[5]])
         end
 
         it "handles (a AND b), where a is NULL-valued" do
           expect(query {
-            __send__(a1).eq(nil).and(__send__(a2).eq("bar"))
+            __send__(a1).eq(nil).and(__send__(a2).eq(200))
           }).to match_array([i[2]])
         end
 
@@ -485,25 +485,25 @@ shared_examples_for "AR Model with translated scope" do |model_class_name, a1=:t
       describe "OR" do
         it "handles (a OR b) on same attribute" do
           expect(query {
-            __send__(a1).eq("foo").or(__send__(a1).eq("bar"))
+            __send__(a1).eq(100).or(__send__(a1).eq(200))
           }).to match_array([i[0], *i[4..6]])
         end
 
         it "handles (a OR b) on same attribute, where a is NULL-valued" do
           expect(query {
-            __send__(a1).eq(nil).or(__send__(a1).eq("foo"))
+            __send__(a1).eq(nil).or(__send__(a1).eq(100))
           }).to match_array([*i[0..3], *i[5..6]])
         end
 
         it "handles (a OR b) on two attributes" do
           expect(query {
-            __send__(a1).eq("foo").or(__send__(a2).eq("bar"))
+            __send__(a1).eq(100).or(__send__(a2).eq(200))
           }).to match_array([i[0], i[2], *i[5..6]])
         end
 
         it "handles (a OR b) on two attributes, where a is NULL-valued" do
           expect(query {
-            __send__(a1).eq(nil).or(__send__(a2).eq("bar"))
+            __send__(a1).eq(nil).or(__send__(a2).eq(200))
           }).to match_array([*i[1..2], i[3], i[5]])
         end
 
@@ -517,80 +517,53 @@ shared_examples_for "AR Model with translated scope" do |model_class_name, a1=:t
       describe "combination of AND and OR" do
         it "handles a AND (b OR c)" do
           expect(query {
-            __send__(a1).eq("foo").and(
-              __send__(a2).eq("bar").or(__send__(a2).eq("baz")))
+            __send__(a1).eq(100).and(
+              __send__(a2).eq(200).or(__send__(a2).eq(300)))
           }).to match_array(i[5..6])
         end
 
         it "handles a AND (b OR c), where c is NULL-valued" do
           expect(query {
-            __send__(a1).eq("foo").and(
-              __send__(a2).eq("bar").or(__send__(a2).eq(nil)))
+            __send__(a1).eq(100).and(
+              __send__(a2).eq(200).or(__send__(a2).eq(nil)))
           }).to match_array([i[0], i[5]])
         end
 
         it "handles (a AND b) OR (c AND d), where b and d are NULL-valued" do
           expect(query {
-            __send__(a1).eq("foo").or(__send__(a1).eq(nil)).and(
-              __send__(a2).eq("baz").or(__send__(a2).eq(nil)))
+            __send__(a1).eq(100).or(__send__(a1).eq(nil)).and(
+              __send__(a2).eq(300).or(__send__(a2).eq(nil)))
           }).to match_array([*i[0..1], i[6]])
-        end
-      end
-
-      describe "LIKE/ILIKE (matches)" do
-        it "includes partial string matches" do
-          foobar = model_class.create(a1 => "foObar")
-          barfoo = model_class.create(a1 => "barfOo")
-          expect(query { __send__(a1).matches("foo%") }).to match_array([i[0], *i[5..6], foobar])
-          expect(query { __send__(a1).matches("%foo") }).to match_array([i[0], *i[5..6], barfoo])
-        end
-
-        if ENV['DB'] == 'postgres' && ::ActiveRecord::VERSION::STRING >= '5.0'
-          it "works with case_sensitive option" do
-            foobar = model_class.create(a1 => "foObar")
-            barfoo = model_class.create(a1 => "barfOo")
-            expect(query { __send__(a1).matches("foo%", nil, true) }).not_to include(foobar)
-            expect(query { __send__(a1).matches("foO%", nil, true) }).to include(foobar)
-            expect(query { __send__(a1).matches("%foo", nil, true) }).not_to include(barfoo)
-            expect(query { __send__(a1).matches("%fOo", nil, true) }).to include(barfoo)
-          end
-        end
-      end
-
-      describe "LOWER" do
-        it "matches lowercase string values" do
-          foobar = model_class.create(a1 => "foObar")
-          expect(query { __send__(a1).lower.eq("foobar") }).to match_array([foobar])
         end
       end
     end
 
     context "multi-block querying" do
       it "combines multiple currencies with non-nil values" do
-        post1 = model_class.new(a1 => "foo en", a2 => "bar en")
-        Mobility.with_currency(:ja) do
-          post1.send("#{a1}=", "foo ja")
-          post1.send("#{a2}=", "bar ja")
+        post1 = model_class.new(a1 => 700, a2 => 800)
+        Mobility.with_currency(:jpy) do
+          post1.send("#{a1}=", 400)
+          post1.send("#{a2}=", 500)
         end
         post1.save
 
-        post2 = model_class.new(a1 => "baz en")
-        Mobility.with_currency(:'pt-BR') { post2.send("#{a1}=", "baz pt-br") }
+        post2 = model_class.new(a1 => 900)
+        Mobility.with_currency(:gbp) { post2.send("#{a1}=", 1000) }
         post2.save
 
         aggregate_failures do
           expect(
-            query(currency: :en) { |en|
-              query(currency: :ja) { |ja|
-                en.__send__(a1).eq("foo en").and(ja.__send__(a2).eq("bar ja"))
+            query(currency: :usd) { |usd|
+              query(currency: :jpy) { |jpy|
+                usd.__send__(a1).eq(700).and(jpy.__send__(a2).eq(500))
               }
             }
           ).to match_array([post1])
 
           expect(
-            query(currency: :en) { |en|
-              query(currency: :'pt-BR') { |pt|
-                en.__send__(a1).eq("baz en").and(pt.__send__(a1).eq("baz pt-br"))
+            query(currency: :usd) { |usd|
+              query(currency: :gbp) { |gbp|
+                usd.__send__(a1).eq(900).and(gbp.__send__(a1).eq(1000))
               }
             }
           ).to match_array([post2])
@@ -598,16 +571,16 @@ shared_examples_for "AR Model with translated scope" do |model_class_name, a1=:t
       end
 
       it "combines multiple currencies with nil and non-nil values" do
-        post1 = model_class.new(a1 => "foo en")
-        Mobility.with_currency(:ja) { post1.send("#{a1}=", "foo ja") }
+        post1 = model_class.new(a1 => 700)
+        Mobility.with_currency(:jpy) { post1.send("#{a1}=", 400) }
         post1.save
 
-        post2 = model_class.create(a1 => "foo en")
+        post2 = model_class.create(a1 => 700)
 
         expect(
-          query(currency: :en) { |en|
-            query(currency: :ja) { |ja|
-              en.__send__(a1).eq("foo en").and(ja.__send__(a1).eq(nil))
+          query(currency: :usd) { |usd|
+            query(currency: :jpy) { |jpy|
+              usd.__send__(a1).eq(700).and(jpy.__send__(a1).eq(nil))
             }
           }
         ).to match_array([post2])
@@ -625,23 +598,23 @@ shared_examples_for "Sequel Model with translated dataset" do |model_class_name,
   describe ".where" do
     context "querying on one translated attribute" do
       before do
-        @instance1 = model_class.create(a1 => "foo")
-        @instance2 = model_class.create(a1 => "bar")
-        @instance3 = model_class.create(a1 => "baz", :published => true)
-        @instance4 = model_class.create(a1 => "baz", :published => false)
-        @instance5 = model_class.create(a1 => "foo", :published => true)
+        @instance1 = model_class.create(a1 => 100)
+        @instance2 = model_class.create(a1 => 200)
+        @instance3 = model_class.create(a1 => 300, :published => true)
+        @instance4 = model_class.create(a1 => 300, :published => false)
+        @instance5 = model_class.create(a1 => 100, :published => true)
       end
 
       it "returns correct result searching on unique attribute value" do
-        expect(query_scope.where(a1 => "bar").select_all(table_name).all).to eq([@instance2])
+        expect(query_scope.where(a1 => 200).select_all(table_name).all).to eq([@instance2])
       end
 
       it "returns correct results when query matches multiple records" do
-        expect(query_scope.where(a1 => "foo").select_all(table_name).all).to match_array([@instance1, @instance5])
+        expect(query_scope.where(a1 => 100).select_all(table_name).all).to match_array([@instance1, @instance5])
       end
 
       it "returns correct result when querying on translated and untranslated attributes" do
-        expect(query_scope.where(a1 => "baz", :published => true).select_all(table_name).all).to eq([@instance3])
+        expect(query_scope.where(a1 => 300, :published => true).select_all(table_name).all).to eq([@instance3])
       end
 
       it "returns correct result when querying on nil values" do
@@ -651,88 +624,88 @@ shared_examples_for "Sequel Model with translated dataset" do |model_class_name,
 
       context "with content in different currencies" do
         before do
-          Mobility.with_currency(:ja) do
-            @ja_instance1 = model_class.create(a1 => "foo ja")
-            @ja_instance2 = model_class.create(a1 => "foo")
+          Mobility.with_currency(:jpy) do
+            @ja_instance1 = model_class.create(a1 => 400)
+            @ja_instance2 = model_class.create(a1 => 100)
           end
         end
 
         it "returns correct result when querying on same attribute value in different currency" do
-          expect(query_scope.where(a1 => "foo").select_all(table_name).all).to match_array([@instance1, @instance5])
+          expect(query_scope.where(a1 => 100).select_all(table_name).all).to match_array([@instance1, @instance5])
 
-          Mobility.with_currency(:ja) do
-            expect(query_scope.where(a1 => "foo ja").select_all(table_name).all).to eq([@ja_instance1])
-            expect(query_scope.where(a1 => "foo").select_all(table_name).all).to eq([@ja_instance2])
+          Mobility.with_currency(:jpy) do
+            expect(query_scope.where(a1 => 400).select_all(table_name).all).to eq([@ja_instance1])
+            expect(query_scope.where(a1 => 100).select_all(table_name).all).to eq([@ja_instance2])
           end
         end
 
         it "returns correct result when querying with currency option" do
-          expect(query_scope.where(a1 => "foo", currency: :en).select_all(table_name).all).to match_array([@instance1, @instance5])
-          expect(query_scope.where(a1 => "foo ja", currency: :ja).select_all(table_name).all).to eq([@ja_instance1])
-          expect(query_scope.where(a1 => "foo", currency: :ja).select_all(table_name).all).to eq([@ja_instance2])
+          expect(query_scope.where(a1 => 100, currency: :usd).select_all(table_name).all).to match_array([@instance1, @instance5])
+          expect(query_scope.where(a1 => 400, currency: :jpy).select_all(table_name).all).to eq([@ja_instance1])
+          expect(query_scope.where(a1 => 100, currency: :jpy).select_all(table_name).all).to eq([@ja_instance2])
         end
 
         it "returns correct result when querying with currency option twice in separate clauses" do
-          @ja_instance1.update(a1 => "foo en")
+          @ja_instance1.update(a1 => 700)
           @ja_instance1.reload
-          expect(query_scope.where(a1 => "foo ja", currency: :ja).where(a1 => "foo en", currency: :en).select_all(table_name).all).to eq([@ja_instance1])
-          expect(query_scope.where(a1 => "foo", currency: :ja).where(a1 => nil, currency: :en).select_all(table_name).all).to eq([@ja_instance2])
+          expect(query_scope.where(a1 => 400, currency: :jpy).where(a1 => 700, currency: :usd).select_all(table_name).all).to eq([@ja_instance1])
+          expect(query_scope.where(a1 => 100, currency: :jpy).where(a1 => nil, currency: :usd).select_all(table_name).all).to eq([@ja_instance2])
         end
       end
     end
 
     context "with two translated attributes" do
       before do
-        @instance1 = model_class.create(a1 => "foo"                                       )
-        @instance2 = model_class.create(a1 => "foo", a2 => "foo content"                  )
-        @instance3 = model_class.create(a1 => "foo", a2 => "foo content", published: false)
-        @instance4 = model_class.create(             a2 => "foo content"                  )
-        @instance5 = model_class.create(a1 => "bar", a2 => "bar content"                  )
-        @instance6 = model_class.create(a1 => "bar",                      published: true )
+        @instance1 = model_class.create(a1 => 100                                       )
+        @instance2 = model_class.create(a1 => 100, a2 => 1200                  )
+        @instance3 = model_class.create(a1 => 100, a2 => 1200, published: false)
+        @instance4 = model_class.create(             a2 => 1200                  )
+        @instance5 = model_class.create(a1 => 200, a2 => 600                  )
+        @instance6 = model_class.create(a1 => 200,                      published: true )
       end
 
       it "returns correct results querying on one attribute" do
-        expect(query_scope.where(a1 => "foo").select_all(table_name).all).to match_array([@instance1, @instance2, @instance3])
-        expect(query_scope.where(a2 => "foo content").select_all(table_name).all).to match_array([@instance2, @instance3, @instance4])
+        expect(query_scope.where(a1 => 100).select_all(table_name).all).to match_array([@instance1, @instance2, @instance3])
+        expect(query_scope.where(a2 => 1200).select_all(table_name).all).to match_array([@instance2, @instance3, @instance4])
       end
 
       it "returns correct results querying on two attributes in single where call" do
-        expect(query_scope.where(a1 => "foo", a2 => "foo content").select_all(table_name).all).to match_array([@instance2, @instance3])
+        expect(query_scope.where(a1 => 100, a2 => 1200).select_all(table_name).all).to match_array([@instance2, @instance3])
       end
 
       it "returns correct results querying on two attributes in separate where calls" do
-        expect(query_scope.where(a1 => "foo").where(a2 => "foo content").select_all(table_name).all).to match_array([@instance2, @instance3])
+        expect(query_scope.where(a1 => 100).where(a2 => 1200).select_all(table_name).all).to match_array([@instance2, @instance3])
       end
 
       it "returns correct result querying on two translated attributes and untranslated attribute" do
-        expect(query_scope.where(a1 => "foo", a2 => "foo content", published: false).select_all(table_name).all).to eq([@instance3])
+        expect(query_scope.where(a1 => 100, a2 => 1200, published: false).select_all(table_name).all).to eq([@instance3])
       end
 
       it "works with nil values" do
-        expect(query_scope.where(a1 => "foo", a2 => nil).select_all(table_name).all).to eq([@instance1])
-        expect(query_scope.where(a1 => "foo").where(a2 => nil).select_all(table_name).all).to eq([@instance1])
+        expect(query_scope.where(a1 => 100, a2 => nil).select_all(table_name).all).to eq([@instance1])
+        expect(query_scope.where(a1 => 100).where(a2 => nil).select_all(table_name).all).to eq([@instance1])
         instance = model_class.create
         expect(query_scope.where(a1 => nil, a2 => nil).select_all(table_name).all).to eq([instance])
       end
 
       context "with content in different currencies" do
         before do
-          Mobility.with_currency(:ja) do
-            @ja_instance1 = model_class.create(a1 => "foo ja", a2 => "foo content ja")
-            @ja_instance2 = model_class.create(a1 => "foo",    a2 => "foo content"   )
-            @ja_instance3 = model_class.create(a1 => "foo"                           )
-            @ja_instance4 = model_class.create(                a2 => "foo"           )
+          Mobility.with_currency(:jpy) do
+            @ja_instance1 = model_class.create(a1 => 400, a2 => 1300)
+            @ja_instance2 = model_class.create(a1 => 100,    a2 => 1200   )
+            @ja_instance3 = model_class.create(a1 => 100                           )
+            @ja_instance4 = model_class.create(                a2 => 100           )
           end
         end
 
         it "returns correct result when querying on same attribute values in different currency" do
-          expect(query_scope.where(a1 => "foo", a2 => "foo content").select_all(table_name).all).to match_array([@instance2, @instance3])
-          expect(query_scope.where(a1 => "foo", a2 => nil).select_all(table_name).all).to eq([@instance1])
+          expect(query_scope.where(a1 => 100, a2 => 1200).select_all(table_name).all).to match_array([@instance2, @instance3])
+          expect(query_scope.where(a1 => 100, a2 => nil).select_all(table_name).all).to eq([@instance1])
 
-          Mobility.with_currency(:ja) do
-            expect(query_scope.where(a1 => "foo").select_all(table_name).all).to match_array([@ja_instance2, @ja_instance3])
-            expect(query_scope.where(a1 => "foo", a2 => "foo content").select_all(table_name).all).to eq([@ja_instance2])
-            expect(query_scope.where(a1 => "foo ja", a2 => "foo content ja").select_all(table_name).all).to eq([@ja_instance1])
+          Mobility.with_currency(:jpy) do
+            expect(query_scope.where(a1 => 100).select_all(table_name).all).to match_array([@ja_instance2, @ja_instance3])
+            expect(query_scope.where(a1 => 100, a2 => 1200).select_all(table_name).all).to eq([@ja_instance2])
+            expect(query_scope.where(a1 => 400, a2 => 1300).select_all(table_name).all).to eq([@ja_instance1])
           end
         end
       end
@@ -740,31 +713,31 @@ shared_examples_for "Sequel Model with translated dataset" do |model_class_name,
 
     context "with array of values" do
       before do
-        @instance1 = model_class.create(a1 => "foo")
-        @instance2 = model_class.create(a1 => "bar")
-        @instance3 = model_class.create(a1 => "baz")
+        @instance1 = model_class.create(a1 => 100)
+        @instance2 = model_class.create(a1 => 200)
+        @instance3 = model_class.create(a1 => 300)
 
-        Mobility.with_currency(:ja) do
-          @ja_instance1 = model_class.create(a1 => "foo")
+        Mobility.with_currency(:jpy) do
+          @ja_instance1 = model_class.create(a1 => 100)
         end
       end
 
       it "returns records with matching translated attribute values" do
-        expect(query_scope.where(a1 => ["foo", "baz"]).select_all(table_name).all).to match_array([@instance1, @instance3])
+        expect(query_scope.where(a1 => [100, 300]).select_all(table_name).all).to match_array([@instance1, @instance3])
       end
 
       it "collapses clauses in array of values" do
-        expect(query_scope.where(a1 => ["foo", "foo"]).select_all(table_name).all).to match_array([@instance1])
+        expect(query_scope.where(a1 => [100, 100]).select_all(table_name).all).to match_array([@instance1])
         aggregate_failures do
-          expect(query_scope.where(a1 => ["foo", "foo", nil]).sql).to eq(query_scope.where(a1 => ["foo", nil]).sql)
-          expect(query_scope.where(a1 => ["foo", nil, nil]).sql).to eq(query_scope.where(a1 => ["foo", nil]).sql)
+          expect(query_scope.where(a1 => [100, 100, nil]).sql).to eq(query_scope.where(a1 => [100, nil]).sql)
+          expect(query_scope.where(a1 => [100, nil, nil]).sql).to eq(query_scope.where(a1 => [100, nil]).sql)
         end
       end
 
       it "uses IN when matching array of two or more non-nil values" do
         aggregate_failures do
-          expect(query_scope.where(a1 => ["foo", "bar"]).sql).to match /\sIN\s/
-          expect(query_scope.where(a1 => "foo").sql).not_to match /\sIN\s/
+          expect(query_scope.where(a1 => [100, 200]).sql).to match /\sIN\s/
+          expect(query_scope.where(a1 => 100).sql).not_to match /\sIN\s/
           expect(query_scope.where(a1 => nil).sql).not_to match /\sIN\s/
         end
       end
@@ -773,35 +746,35 @@ shared_examples_for "Sequel Model with translated dataset" do |model_class_name,
 
   describe ".exclude" do
     before do
-      @instance1 = model_class.create(a1 => "foo"                                       )
-      @instance2 = model_class.create(a1 => "foo", a2 => "baz content"                  )
-      @instance3 = model_class.create(a1 => "bar", a2 => "foo content", published: false)
+      @instance1 = model_class.create(a1 => 100                                       )
+      @instance2 = model_class.create(a1 => 100, a2 => 900                  )
+      @instance3 = model_class.create(a1 => 200, a2 => 1200, published: false)
     end
 
     it "returns record without excluded attribute condition" do
-      expect(query_scope.exclude(a1 => "foo").select_all(table_name).all).to match_array([@instance3])
+      expect(query_scope.exclude(a1 => 100).select_all(table_name).all).to match_array([@instance3])
     end
 
     it "returns record without excluded set of attribute conditions" do
-      expect(query_scope.exclude(a1 => "foo", a2 => "foo content").select_all(table_name).all).to match_array([@instance2, @instance3])
+      expect(query_scope.exclude(a1 => 100, a2 => 1200).select_all(table_name).all).to match_array([@instance2, @instance3])
     end
 
     it "works with nil values" do
-      expect(query_scope.exclude(a1 => "bar", a2 => nil).select_all(table_name).all).to match_array([@instance1, @instance2, @instance3])
-      expect(query_scope.exclude(a1 => "bar").exclude(a2 => nil).select_all(table_name).all).to eq([@instance2])
+      expect(query_scope.exclude(a1 => 200, a2 => nil).select_all(table_name).all).to match_array([@instance1, @instance2, @instance3])
+      expect(query_scope.exclude(a1 => 200).exclude(a2 => nil).select_all(table_name).all).to eq([@instance2])
       expect(query_scope.exclude(a1 => nil).exclude(a2 => nil).select_all(table_name).all).to match_array([@instance2, @instance3])
     end
   end
 
   describe ".or" do
     before do
-      @instance1 = model_class.create(a1 => "baz", a2 => "foo content", published: true )
-      @instance2 = model_class.create(a1 => "foo", a2 => "baz content", published: false)
-      @instance3 = model_class.create(a1 => "bar", a2 => "foo content", published: false)
+      @instance1 = model_class.create(a1 => 300, a2 => 1200, published: true )
+      @instance2 = model_class.create(a1 => 100, a2 => 900, published: false)
+      @instance3 = model_class.create(a1 => 200, a2 => 1200, published: false)
     end
 
     it "returns union of queries" do
-      expect(query_scope.where(published: true).or(a1 => "foo").select_all(table_name).all).to match_array([@instance1, @instance2])
+      expect(query_scope.where(published: true).or(a1 => 100).select_all(table_name).all).to match_array([@instance1, @instance2])
     end
 
     it "works with set of translated and untranslated attributes" do
@@ -811,7 +784,7 @@ shared_examples_for "Sequel Model with translated dataset" do |model_class_name,
       # avoid without modification of an earlier dataset, which is probably not
       # a good idea.
       skip "Not supported by #{backend_name}" if [:table, :key_value].include?(backend_name)
-      expect(query_scope.where(a1 => "foo").or(:published => false, a2 => "foo content").select_all(table_name).all).to match_array([@instance2, @instance3])
+      expect(query_scope.where(a1 => 100).or(:published => false, a2 => 1200).select_all(table_name).all).to match_array([@instance2, @instance3])
     end
   end
 
@@ -821,18 +794,18 @@ shared_examples_for "Sequel Model with translated dataset" do |model_class_name,
 
     context "single-block querying" do
       let!(:i) { [
-        model_class.create(a1 => "foo"             ),
+        model_class.create(a1 => 100             ),
         model_class.create(                        ),
-        model_class.create(             a2 => "bar"),
-        model_class.create(             a2 => "foo"),
-        model_class.create(a1 => "bar"             ),
-        model_class.create(a1 => "foo", a2 => "bar"),
-        model_class.create(a1 => "foo", a2 => "baz")
+        model_class.create(             a2 => 200),
+        model_class.create(             a2 => 100),
+        model_class.create(a1 => 200             ),
+        model_class.create(a1 => 100, a2 => 200),
+        model_class.create(a1 => 100, a2 => 300)
       ] }
 
       describe "equality" do
         it "handles (a EQ 'foo')" do
-          expect(query { __send__(a1) =~ "foo" }.select_all(table_name).all).to match_array([i[0], *i[5..6]])
+          expect(query { __send__(a1) =~ 100 }.select_all(table_name).all).to match_array([i[0], *i[5..6]])
         end
 
         it "handles (a EQ NULL)" do
@@ -841,38 +814,38 @@ shared_examples_for "Sequel Model with translated dataset" do |model_class_name,
 
         it "handles (a EQ b)" do
           matching = [
-            model_class.create(a1 => "foo", a2 => "foo"),
-            model_class.create(a1 => "bar", a2 => "bar")
+            model_class.create(a1 => 100, a2 => 100),
+            model_class.create(a1 => 200, a2 => 200)
           ]
           expect(query { __send__(a1) =~ __send__(a2) }.select_all(table_name).all).to match_array(matching)
         end
 
         context "with currency option" do
           it "handles (a EQ 'foo')" do
-            post1 = model_class.new(a1 => "foo en", a2 => "bar en")
-            Mobility.with_currency(:ja) do
-              post1.send("#{a1}=", "foo ja")
-              post1.send("#{a2}=", "bar ja")
+            post1 = model_class.new(a1 => 700, a2 => 800)
+            Mobility.with_currency(:jpy) do
+              post1.send("#{a1}=", 400)
+              post1.send("#{a2}=", 500)
             end
             post1.save
 
-            post2 = model_class.new(a1 => "baz en")
-            Mobility.with_currency(:'pt-BR') { post2.send("#{a1}=", "baz pt-br") }
+            post2 = model_class.new(a1 => 900)
+            Mobility.with_currency(:gbp) { post2.send("#{a1}=", 1000) }
             post2.save
 
-            expect(query(currency: :en) { __send__(a1) =~ "foo en" }.select_all(table_name).all).to match_array([post1])
-            expect(query(currency: :en) { __send__(a2) =~ "bar en" }.select_all(table_name).all).to match_array([post1])
-            expect(query(currency: :ja) { __send__(a1) =~ "foo ja" }.select_all(table_name).all).to match_array([post1])
-            expect(query(currency: :ja) { __send__(a2) =~ "bar ja" }.select_all(table_name).all).to match_array([post1])
-            expect(query(currency: :en) { __send__(a1) =~ "baz en" }.select_all(table_name).all).to match_array([post2])
-            expect(query(currency: :'pt-BR') { __send__(a1) =~ "baz pt-br" }.select_all(table_name).all).to match_array([post2])
+            expect(query(currency: :usd) { __send__(a1) =~ 700 }.select_all(table_name).all).to match_array([post1])
+            expect(query(currency: :usd) { __send__(a2) =~ 800 }.select_all(table_name).all).to match_array([post1])
+            expect(query(currency: :jpy) { __send__(a1) =~ 400 }.select_all(table_name).all).to match_array([post1])
+            expect(query(currency: :jpy) { __send__(a2) =~ 500 }.select_all(table_name).all).to match_array([post1])
+            expect(query(currency: :usd) { __send__(a1) =~ 900 }.select_all(table_name).all).to match_array([post2])
+            expect(query(currency: :gbp) { __send__(a1) =~ 1000 }.select_all(table_name).all).to match_array([post2])
           end
         end
       end
 
       describe "not equal" do
         it "handles (a != 'foo')" do
-          expect(query { __send__(a1) !~ "foo" }.select_all(table_name).all).to match_array([i[4]])
+          expect(query { __send__(a1) !~ 100 }.select_all(table_name).all).to match_array([i[4]])
         end
 
         # @note For sequel, we need to use +invert+ to get NOT EQ NULL
@@ -884,7 +857,7 @@ shared_examples_for "Sequel Model with translated dataset" do |model_class_name,
       describe "AND" do
         it "handles (a AND b)" do
           expect(query {
-            (__send__(a1) =~ "foo") & (__send__(a2) =~ "bar")
+            (__send__(a1) =~ 100) & (__send__(a2) =~ 200)
           }.select_all(table_name).all).to match_array([i[5]])
         end
       end
@@ -892,13 +865,13 @@ shared_examples_for "Sequel Model with translated dataset" do |model_class_name,
       describe "OR" do
         it "handles (a OR b) on same attribute" do
           expect(query {
-            (__send__(a1) =~ "foo") | (__send__(a1) =~ "bar")
+            (__send__(a1) =~ 100) | (__send__(a1) =~ 200)
           }.select_all(table_name).all).to match_array([i[0], *i[4..6]])
         end
 
         it "handles (a OR b) on two attributes" do
           expect(query {
-            (__send__(a1) =~ "foo") | (__send__(a2) =~ "bar")
+            (__send__(a1) =~ 100) | (__send__(a2) =~ 200)
           }.select_all(table_name).all).to match_array([i[0], i[2], *i[5..6]])
         end
       end
@@ -906,64 +879,38 @@ shared_examples_for "Sequel Model with translated dataset" do |model_class_name,
       describe "combination of AND and OR" do
         it "handles a AND (b OR c)" do
           expect(query {
-            ((__send__(a1) =~ "foo") & (__send__(a2) =~ "bar")) | (__send__(a2) =~ "baz")
+            ((__send__(a1) =~ 100) & (__send__(a2) =~ 200)) | (__send__(a2) =~ 300)
           }.select_all(table_name).all).to match_array(i[5..6])
-        end
-      end
-
-      describe "ILIKE" do
-        it "matches case-insensitively, including partial string matches" do
-          foobar = model_class.create(a1 => "foObar")
-          barfoo = model_class.create(a1 => "barfOo")
-          expect(query { Sequel.ilike(__send__(a1), "foo%") }.select_all(table_name).all).
-            to match_array([i[0], *i[5..6], foobar])
-          expect(query { Sequel.ilike(__send__(a1), "%foo") }.select_all(table_name).all).
-            to match_array([i[0], *i[5..6], barfoo])
-        end
-      end
-
-      describe "LIKE" do
-        it "matches case-sensitively, including partial string matches" do
-          foobar = model_class.create(a1 => "foObar")
-          barfoo = model_class.create(a1 => "barfOo")
-          expect(query { Sequel.like(__send__(a1), "foo%") }.select_all(table_name).all).
-            not_to include(foobar)
-          expect(query { Sequel.like(__send__(a1), "foO%") }.select_all(table_name).all).
-            to include(foobar)
-          expect(query { Sequel.like(__send__(a1), "%foo") }.select_all(table_name).all).
-            not_to include(barfoo)
-          expect(query { Sequel.like(__send__(a1), "%fOo") }.select_all(table_name).all).
-            to include(barfoo)
         end
       end
     end
 
     context "multi-block querying" do
       it "combines multiple currencies" do
-        post1 = model_class.new(a1 => "foo en", a2 => "bar en")
-        Mobility.with_currency(:ja) do
-          post1.send("#{a1}=", "foo ja")
-          post1.send("#{a2}=", "bar ja")
+        post1 = model_class.new(a1 => 700, a2 => 800)
+        Mobility.with_currency(:jpy) do
+          post1.send("#{a1}=", 400)
+          post1.send("#{a2}=", 500)
         end
         post1.save
 
-        post2 = model_class.new(a1 => "baz en")
-        Mobility.with_currency(:'pt-BR') { post2.send("#{a1}=", "baz pt-br") }
+        post2 = model_class.new(a1 => 900)
+        Mobility.with_currency(:gbp) { post2.send("#{a1}=", 1000) }
         post2.save
 
         aggregate_failures do
           expect(
-            query(currency: :en) { |en|
-              query(currency: :ja) { |ja|
-                (en.__send__(a1) =~ "foo en") & (ja.__send__(a2) =~ "bar ja")
+            query(currency: :usd) { |usd|
+              query(currency: :jpy) { |jpy|
+                (usd.__send__(a1) =~ 700) & (ja.__send__(a2) =~ 500)
               }
             }.select_all(table_name).all
           ).to match_array([post1])
 
           expect(
-            query(currency: :en) { |en|
-              query(currency: :'pt-BR') { |pt|
-                (en.__send__(a1) =~ "baz en") & (pt.__send__(a1) =~ "baz pt-br")
+            query(currency: :usd) { |usd|
+              query(currency: :gbp) { |gbp|
+                (usd.__send__(a1) =~ 900) & (pt.__send__(a1) =~ 1000)
               }
             }.select_all(table_name).all
           ).to match_array([post2])

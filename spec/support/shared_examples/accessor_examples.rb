@@ -6,11 +6,11 @@ shared_examples_for "model with translated attribute accessors" do |model_class_
 
   it "gets and sets prices in one currency" do
     aggregate_failures "before saving" do
-      instance.public_send(:"#{attribute1}=", "foo")
-      expect(instance.public_send(attribute1)).to eq("foo")
+      instance.public_send(:"#{attribute1}=", 100)
+      expect(instance.public_send(attribute1)).to eq(100)
 
-      instance.public_send(:"#{attribute2}=", "bar")
-      expect(instance.public_send(attribute2)).to eq("bar")
+      instance.public_send(:"#{attribute2}=", 200)
+      expect(instance.public_send(attribute2)).to eq(200)
 
       instance.save
     end
@@ -18,39 +18,39 @@ shared_examples_for "model with translated attribute accessors" do |model_class_
     aggregate_failures "after reload" do
       instance = model_class.first
 
-      expect(instance.public_send(attribute1)).to eq("foo")
-      expect(instance.public_send(attribute2)).to eq("bar")
+      expect(instance.public_send(attribute1)).to eq(100)
+      expect(instance.public_send(attribute2)).to eq(200)
     end
   end
 
   it "gets and sets prices in multiple currencies" do
     aggregate_failures "before saving" do
-      instance.public_send(:"#{attribute1}=", "foo")
-      instance.public_send(:"#{attribute2}=", "bar")
-      Mobility.with_currency(:ja) do
-        instance.public_send(:"#{attribute1}=", "あああ")
+      instance.public_send(:"#{attribute1}=", 100)
+      instance.public_send(:"#{attribute2}=", 200)
+      Mobility.with_currency(:jpy) do
+        instance.public_send(:"#{attribute1}=", 300)
       end
 
-      expect(instance.public_send(attribute1)).to eq("foo")
-      expect(instance.public_send(attribute2)).to eq("bar")
-      Mobility.with_currency(:ja) do
-        expect(instance.public_send(attribute1)).to eq("あああ")
+      expect(instance.public_send(attribute1)).to eq(100)
+      expect(instance.public_send(attribute2)).to eq(200)
+      Mobility.with_currency(:jpy) do
+        expect(instance.public_send(attribute1)).to eq(300)
         expect(instance.public_send(attribute2)).to eq(nil)
-        expect(instance.public_send(attribute1, { currency: :en })).to eq("foo")
-        expect(instance.public_send(attribute2, { currency: :en })).to eq("bar")
+        expect(instance.public_send(attribute1, { currency: :usd })).to eq(100)
+        expect(instance.public_send(attribute2, { currency: :usd })).to eq(200)
       end
-      expect(instance.public_send(attribute1, { currency: :ja })).to eq("あああ")
+      expect(instance.public_send(attribute1, { currency: :jpy })).to eq(300)
     end
 
     instance.save
     instance = model_class.first
 
     aggregate_failures "after reload" do
-      expect(instance.public_send(attribute1)).to eq("foo")
-      expect(instance.public_send(attribute2)).to eq("bar")
+      expect(instance.public_send(attribute1)).to eq(100)
+      expect(instance.public_send(attribute2)).to eq(200)
 
-      Mobility.with_currency(:ja) do
-        expect(instance.public_send(attribute1)).to eq("あああ")
+      Mobility.with_currency(:jpy) do
+        expect(instance.public_send(attribute1)).to eq(300)
         expect(instance.public_send(attribute2)).to eq(nil)
       end
     end
@@ -58,19 +58,19 @@ shared_examples_for "model with translated attribute accessors" do |model_class_
 
   it "sets prices in multiple currencies when creating and saving model" do
     aggregate_failures do
-      instance = model_class.create(attribute1 => "foo", attribute2 => "bar")
+      instance = model_class.create(attribute1 => 100, attribute2 => 200)
 
-      expect(instance.send(attribute1)).to eq("foo")
-      expect(instance.send(attribute2)).to eq("bar")
+      expect(instance.send(attribute1)).to eq(100)
+      expect(instance.send(attribute2)).to eq(200)
 
-      Mobility.with_currency(:ja) { instance.send("#{attribute1}=", "あああ") }
+      Mobility.with_currency(:jpy) { instance.send("#{attribute1}=", 300) }
       instance.save
 
       instance = model_class.first
 
-      expect(instance.send(attribute1)).to eq("foo")
-      Mobility.with_currency(:ja) { expect(instance.send(attribute1)).to eq("あああ") }
-      Mobility.with_currency(:ja) { expect(instance.send(attribute2)).to eq(nil) }
+      expect(instance.send(attribute1)).to eq(100)
+      Mobility.with_currency(:jpy) { expect(instance.send(attribute1)).to eq(300) }
+      Mobility.with_currency(:jpy) { expect(instance.send(attribute2)).to eq(nil) }
     end
   end
 
@@ -78,19 +78,19 @@ shared_examples_for "model with translated attribute accessors" do |model_class_
     instance = model_class.create
 
     aggregate_failures "setting attributes with update" do
-      instance.update(attribute1 => "foo")
-      expect(instance.send(attribute1)).to eq("foo")
-      Mobility.with_currency(:ja) do
-        instance.update(attribute1 => "あああ")
-        expect(instance.send(attribute1)).to eq("あああ")
+      instance.update(attribute1 => 100)
+      expect(instance.send(attribute1)).to eq(100)
+      Mobility.with_currency(:jpy) do
+        instance.update(attribute1 => 300)
+        expect(instance.send(attribute1)).to eq(300)
       end
     end
 
     instance = model_class.first
 
     aggregate_failures "reading attributes from db after update" do
-      expect(instance.send(attribute1)).to eq("foo")
-      Mobility.with_currency(:ja) { expect(instance.send(attribute1)).to eq("あああ") }
+      expect(instance.send(attribute1)).to eq(100)
+      Mobility.with_currency(:jpy) { expect(instance.send(attribute1)).to eq(300) }
     end
   end
 end
@@ -99,12 +99,12 @@ shared_examples_for "Sequel model with translated attribute accessors" do |model
   let(:model_class) { constantize(model_class_name) }
 
   it "marks model as modified if price(s) change" do
-    instance = model_class.create(attribute1 => "foo")
+    instance = model_class.create(attribute1 => 100)
 
     aggregate_failures "before saving" do
       expect(instance.modified?).to eq(false)
 
-      instance.send("#{attribute1}=", "bar")
+      instance.send("#{attribute1}=", 200)
       expect(instance.modified?).to eq(true)
     end
 
@@ -112,10 +112,10 @@ shared_examples_for "Sequel model with translated attribute accessors" do |model
 
     aggregate_failures "after saving" do
       expect(instance.modified?).to eq(false)
-      instance.send("#{attribute1}=", "bar")
+      instance.send("#{attribute1}=", 200)
       instance.modified?
       expect(instance.modified?).to eq(false)
-      instance.send("#{attribute1}=", "foo")
+      instance.send("#{attribute1}=", 100)
       expect(instance.modified?).to eq(true)
     end
   end
